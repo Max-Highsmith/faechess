@@ -19,6 +19,17 @@ const BoardRenderer = (() => {
   let currentSkin = 'classic';
   let viewMode = 'xy'; // 'xy' (row,col by layer), 'xz' (row,layer by col), 'yz' (col,layer by row)
 
+  // Layer tint colors: red, orange, yellow, green, blue (bottom to top)
+  const LAYER_TINTS = [
+    new THREE.Color(0xff4444), // red
+    new THREE.Color(0xff8c00), // orange
+    new THREE.Color(0xffdd00), // yellow
+    new THREE.Color(0x44cc44), // green
+    new THREE.Color(0x4488ff), // blue
+  ];
+  const LAYER_TINT_STRENGTH = 0.18;
+  const PLATFORM_TINT_STRENGTH = 0.35;
+
   function cellWorldPos(x, y, z) {
     let worldX, worldY, worldZ;
 
@@ -761,8 +772,9 @@ const BoardRenderer = (() => {
       const platformGeo = new THREE.BoxGeometry(
         BOARD_SIZE * CELL_SIZE + 0.1, 0.05, BOARD_SIZE * CELL_SIZE + 0.1
       );
+      const platformColor = new THREE.Color(0x222244).lerp(LAYER_TINTS[stackIdx], PLATFORM_TINT_STRENGTH);
       const platformMat = new THREE.MeshPhongMaterial({
-        color: 0x222244, transparent: true, opacity: 0.3
+        color: platformColor, transparent: true, opacity: 0.3
       });
       const platform = new THREE.Mesh(platformGeo, platformMat);
       platform.position.set(0, stackIdx * LEVEL_GAP - 0.06, 0);
@@ -785,9 +797,11 @@ const BoardRenderer = (() => {
       for (let y = 0; y < BOARD_SIZE; y++) {
         for (let x = 0; x < BOARD_SIZE; x++) {
           const isLight = (x + y + stackIdx) % 2 === 0;
+          const baseColor = new THREE.Color(isLight ? 0xd4c89a : 0x6b5b3a);
+          const tintedColor = baseColor.lerp(LAYER_TINTS[stackIdx], LAYER_TINT_STRENGTH);
           const geo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.1, CELL_SIZE * 0.95);
           const mat = new THREE.MeshPhongMaterial({
-            color: isLight ? 0xd4c89a : 0x6b5b3a, transparent: true, opacity: 0.85
+            color: tintedColor, transparent: true, opacity: 0.85
           });
           const mesh = new THREE.Mesh(geo, mat);
 

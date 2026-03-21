@@ -31,6 +31,15 @@ const FlatRenderer = (() => {
   const DARK_COLOR = '#6b5b3a';
   const BG_COLOR = '#1a1a2e';
 
+  // Layer tint colors: red, orange, yellow, green, blue (bottom to top)
+  const LAYER_TINT_RGBA = [
+    'rgba(255, 68, 68, 0.15)',   // red
+    'rgba(255, 140, 0, 0.15)',   // orange
+    'rgba(255, 221, 0, 0.15)',   // yellow
+    'rgba(68, 204, 68, 0.15)',   // green
+    'rgba(68, 136, 255, 0.15)',  // blue
+  ];
+
   function computeLayout() {
     const availW = window.innerWidth - 260;
     const raw = (availW - 48) / 26.4;
@@ -192,6 +201,10 @@ const FlatRenderer = (() => {
           const py = topY + (4 - gridY) * cellPx;
           const isLight = (x + y + z) % 2 === 0;
           ctx.fillStyle = isLight ? LIGHT_COLOR : DARK_COLOR;
+          ctx.fillRect(px, py, cellPx, cellPx);
+
+          // Layer color tint
+          ctx.fillStyle = LAYER_TINT_RGBA[stackIdx];
           ctx.fillRect(px, py, cellPx, cellPx);
 
           if (checkCell && checkCell[0] === x && checkCell[1] === y && checkCell[2] === z) {
