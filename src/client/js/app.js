@@ -30,8 +30,11 @@ Promise.all([
   /* @vite-ignore */ import('./render.js'),
   /* @vite-ignore */ import('./flat-render.js')
 ]).then(() => {
-  // Now load main.js which depends on the render files
-  /* @vite-ignore */ import('./main.js').then(mainModule => {
+  // Now load main.js and analyzer.js which depend on the render files
+  Promise.all([
+    /* @vite-ignore */ import('./main.js'),
+    /* @vite-ignore */ import('./analyzer.js')
+  ]).then(([mainModule, analyzerModule]) => {
     console.log('✅ All modules loaded successfully!');
 
     // Make loadUserProgress available globally for auth.js

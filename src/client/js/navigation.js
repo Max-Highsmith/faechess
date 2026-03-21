@@ -8,9 +8,11 @@
 export function showLandingPage() {
   const landingPage = document.getElementById('landing-page');
   const gameView = document.getElementById('game-view');
+  const analyzerView = document.getElementById('analyzer-view');
 
   if (landingPage) landingPage.classList.remove('hidden');
   if (gameView) gameView.classList.add('hidden');
+  if (analyzerView) analyzerView.classList.add('hidden');
 }
 
 /**
@@ -19,9 +21,24 @@ export function showLandingPage() {
 export function show3DChessGame() {
   const landingPage = document.getElementById('landing-page');
   const gameView = document.getElementById('game-view');
+  const analyzerView = document.getElementById('analyzer-view');
 
   if (landingPage) landingPage.classList.add('hidden');
+  if (analyzerView) analyzerView.classList.add('hidden');
   if (gameView) gameView.classList.remove('hidden');
+}
+
+/**
+ * Show the game analyzer
+ */
+export function showAnalyzer() {
+  const landingPage = document.getElementById('landing-page');
+  const gameView = document.getElementById('game-view');
+  const analyzerView = document.getElementById('analyzer-view');
+
+  if (landingPage) landingPage.classList.add('hidden');
+  if (gameView) gameView.classList.add('hidden');
+  if (analyzerView) analyzerView.classList.remove('hidden');
 }
 
 /**
@@ -82,6 +99,22 @@ export function initNavigation() {
       // Trigger the main logout button
       const mainLogoutBtn = document.getElementById('logout-btn');
       if (mainLogoutBtn) mainLogoutBtn.click();
+    });
+  }
+
+  // Analyzer card
+  const openAnalyzer = document.getElementById('open-analyzer');
+  if (openAnalyzer) {
+    openAnalyzer.addEventListener('click', () => {
+      showAnalyzer();
+    });
+  }
+
+  // Analyzer back button
+  const analyzerBack = document.getElementById('analyzer-back');
+  if (analyzerBack) {
+    analyzerBack.addEventListener('click', () => {
+      showLandingPage();
     });
   }
 

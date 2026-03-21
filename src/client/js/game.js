@@ -19,7 +19,7 @@ export const PIECE_NAMES = { K:'King', Q:'Queen', R:'Rook', B:'Bishop', N:'Knigh
 export function key(x, y, z) { return `${x},${y},${z}`; }
 export function parseKey(k) { return k.split(',').map(Number); }
 
-function initialBoard() {
+export function initialBoard() {
   const board = {};
   // White pieces: levels A (z=0) and B (z=1)
   // Level A: R N K N R

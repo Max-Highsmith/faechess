@@ -45,6 +45,13 @@
           <p>Coming Soon</p>
           <p class="game-desc">Chess on a wraparound board topology</p>
         </button>
+
+        <button class="game-card" id="open-analyzer">
+          <div class="game-icon">📊</div>
+          <h2>Game Analyzer</h2>
+          <p>Review &amp; Learn</p>
+          <p class="game-desc">Load a game report and analyze every move</p>
+        </button>
       </div>
     </div>
   </div>
@@ -138,6 +145,44 @@
     </div>
   </div>
   <!-- End Game View -->
+
+  <!-- Analyzer View (hidden by default) -->
+  <div id="analyzer-view" class="hidden">
+    <div id="analyzer-ui">
+      <div class="game-header">
+        <button id="analyzer-back" class="back-btn">← Back to Menu</button>
+        <h1>Game Analyzer</h1>
+        <h2>Move-by-Move Analysis</h2>
+      </div>
+
+      <div id="analyzer-upload">
+        <label for="analyzer-file" class="upload-label">Load Game Report (.json)</label>
+        <input type="file" id="analyzer-file" accept=".json">
+      </div>
+
+      <div id="analyzer-info" class="hidden">
+        <div id="analyzer-meta"></div>
+
+        <div id="analyzer-controls">
+          <button id="az-start" title="Start">⏮</button>
+          <button id="az-prev" title="Previous">◀</button>
+          <span id="az-position">Start</span>
+          <button id="az-next" title="Next">▶</button>
+          <button id="az-end" title="End">⏭</button>
+        </div>
+
+        <div id="analyzer-move-list"></div>
+
+        <div id="analyzer-panel">
+          <h3>Move Analysis</h3>
+          <div id="az-played"></div>
+          <div id="az-eval-bar"><div id="az-eval-fill"></div></div>
+          <div id="az-ranked-moves"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End Analyzer View -->
 
   <!-- Auth Modal -->
   <div id="auth-modal" class="modal hidden">

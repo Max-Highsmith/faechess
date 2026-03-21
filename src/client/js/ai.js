@@ -89,6 +89,18 @@ function minimax(board, depth, alpha, beta, maximizing, aiColor) {
   }
 }
 
+export function rankMoves(board, color, depth = 2) {
+  const moves = allLegalMoves(board, color);
+  const scored = moves.map(move => {
+    const { board: nb } = GameModule.applyMove(board, move.from, move.to);
+    const { score } = minimax(nb, depth - 1, -Infinity, Infinity, false, color);
+    const captured = board[GameModule.key(...move.to)] || null;
+    const piece = board[GameModule.key(...move.from)];
+    return { ...move, score, piece, captured };
+  });
+  return scored.sort((a, b) => b.score - a.score);
+}
+
 export class AI {
   constructor(color = 'b', depth = 2) {
     this.color = color;

@@ -319,3 +319,84 @@ canvas { display: block; }
   border-color: #7fdbca;
   background: #1a2740;
 }
+
+/* ===================================
+   ANALYZER VIEW
+   =================================== */
+
+#analyzer-ui {
+  position: absolute; top: 0; left: 0; width: 340px; height: 100vh;
+  background: rgba(10,10,30,0.92); padding: 16px; overflow-y: auto; z-index: 10;
+  border-right: 1px solid #333;
+}
+#analyzer-ui h1 { font-size: 1.3em; margin-bottom: 4px; color: #7fdbca; }
+#analyzer-ui h2 { font-size: 0.85em; font-weight: normal; color: #888; margin-bottom: 12px; }
+
+/* Upload */
+#analyzer-upload { margin-bottom: 16px; }
+.upload-label {
+  display: block; background: #7fdbca; color: #1a1a2e; font-weight: bold;
+  padding: 10px 16px; border-radius: 6px; cursor: pointer; text-align: center;
+  font-size: 0.9em; margin-bottom: 8px; transition: background 0.2s;
+}
+.upload-label:hover { background: #5fc4b1; }
+#analyzer-file { display: none; }
+
+/* Meta */
+#analyzer-meta { font-size: 0.8em; color: #aaa; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #333; }
+
+/* Stepper controls */
+#analyzer-controls {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
+}
+#analyzer-controls button {
+  background: #16213e; color: #eee; border: 1px solid #444;
+  padding: 6px 10px; cursor: pointer; border-radius: 4px; font-size: 0.9em;
+}
+#analyzer-controls button:hover { background: #1a1a5e; }
+#az-position { font-size: 0.85em; color: #7fdbca; flex: 1; text-align: center; }
+
+/* Move list */
+#analyzer-move-list {
+  max-height: 160px; overflow-y: auto; margin-bottom: 12px;
+  border: 1px solid #333; border-radius: 4px;
+}
+.az-move-entry {
+  padding: 4px 8px; font-size: 0.8em; cursor: pointer;
+  display: flex; justify-content: space-between; border-bottom: 1px solid #2a2a3e;
+}
+.az-move-entry:hover { background: #1a1a5e; }
+.az-move-entry.active { background: #1e2a4a; border-left: 3px solid #7fdbca; }
+.az-move-entry .az-move-num { color: #666; width: 28px; }
+.az-move-entry .az-move-notation { color: #eee; flex: 1; }
+.az-move-entry .az-move-badge { font-size: 0.75em; font-weight: bold; padding: 1px 6px; border-radius: 3px; }
+.az-badge-best { background: rgba(68,255,136,0.2); color: #44ff88; }
+.az-badge-good { background: rgba(127,219,202,0.2); color: #7fdbca; }
+.az-badge-inaccuracy { background: rgba(247,201,72,0.2); color: #f7c948; }
+.az-badge-blunder { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+
+/* Analysis panel */
+#analyzer-panel { border-top: 1px solid #333; padding-top: 8px; }
+#analyzer-panel h3 { font-size: 0.85em; color: #888; margin-bottom: 8px; }
+#az-played { font-size: 0.9em; color: #eee; margin-bottom: 8px; }
+
+/* Eval bar */
+#az-eval-bar {
+  width: 100%; height: 12px; background: #333; border-radius: 6px;
+  overflow: hidden; margin-bottom: 12px;
+}
+#az-eval-fill {
+  height: 100%; width: 50%; background: #7fdbca; transition: width 0.3s;
+  border-radius: 6px;
+}
+
+/* Ranked moves table */
+#az-ranked-moves { max-height: 200px; overflow-y: auto; }
+.az-rank-row {
+  display: flex; align-items: center; gap: 8px; padding: 3px 6px;
+  font-size: 0.78em; border-bottom: 1px solid #2a2a3e;
+}
+.az-rank-row.played { background: rgba(127,219,202,0.1); border-left: 3px solid #7fdbca; }
+.az-rank-num { color: #666; width: 22px; text-align: right; }
+.az-rank-notation { color: #ddd; flex: 1; }
+.az-rank-score { color: #aaa; width: 60px; text-align: right; font-family: monospace; }
