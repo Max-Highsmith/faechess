@@ -1,0 +1,28 @@
+{
+  "name": "raumschach-web",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Raumschach 5x5x5 3D Chess with weekly puzzle subscriptions",
+  "scripts": {
+    "dev": "concurrently \"npm:dev:*\"",
+    "dev:client": "vite",
+    "dev:server": "nodemon src/server/server.js",
+    "build": "vite build",
+    "start": "NODE_ENV=production node src/server/server.js",
+    "migrate": "node migrations/migrate-puzzles.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "resend": "^3.0.0",
+    "node-cron": "^3.0.3",
+    "three": "^0.161.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,104 @@
+/**
+ * Raumschach – Simple AI Engine (Minimax with Alpha-Beta Pruning)
+ */
+import * as GameModule from './game.js';
+
+const PIECE_VALUES = { P: 100, N: 300, B: 330, U: 350, R: 500, Q: 900, K: 10000 };
+
+function positionBonus(x, y, z) {
+  const dx = Math.abs(x - 2), dy = Math.abs(y - 2), dz = Math.abs(z - 2);
+  return (6 - dx - dy - dz) * 2;
+}
+
+function evaluate(board, color) {
+  let score = 0;
+  for (const k of Object.keys(board)) {
+    const piece = board[k];
+    const [x, y, z] = GameModule.parseKey(k);
+    const value = PIECE_VALUES[piece.type] + positionBonus(x, y, z);
+    score += piece.color === color ? value : -value;
+  }
+  return score;
+}
+
+function allLegalMoves(board, color) {
+  const moves = [];
+  for (const k of Object.keys(board)) {
+    const piece = board[k];
+    if (piece.color !== color) continue;
+    const [x, y, z] = GameModule.parseKey(k);
+    const targets = GameModule.legalMoves(board, x, y, z);
+    for (const to of targets) {
+      moves.push({ from: [x, y, z], to });
+    }
+  }
+  return moves;
+}
+
+function minimax(board, depth, alpha, beta, maximizing, aiColor) {
+  const currentColor = maximizing ? aiColor : (aiColor === 'w' ? 'b' : 'w');
+  const moves = allLegalMoves(board, currentColor);
+
+  if (depth === 0 || moves.length === 0) {
+    let score = evaluate(board, aiColor);
+    if (moves.length === 0) {
+      if (GameModule.isInCheck(board, currentColor)) {
+        score = maximizing ? -100000 + (3 - depth) : 100000 - (3 - depth);
+      } else {
+        score = 0;
+      }
+    }
+    return { score, move: null };
+  }
+
+  // Move ordering: captures and checks first
+  moves.sort((a, b) => {
+    const capA = board[GameModule.key(...a.to)] ? PIECE_VALUES[board[GameModule.key(...a.to)].type] : 0;
+    const capB = board[GameModule.key(...b.to)] ? PIECE_VALUES[board[GameModule.key(...b.to)].type] : 0;
+    return capB - capA;
+  });
+
+  let bestMove = moves[0];
+
+  if (maximizing) {
+    let maxEval = -Infinity;
+    for (const move of moves) {
+      const { board: nb } = GameModule.applyMove(board, move.from, move.to);
+      const { score } = minimax(nb, depth - 1, alpha, beta, false, aiColor);
+      if (score > maxEval) {
+        maxEval = score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, score);
+      if (beta <= alpha) break;
+    }
+    return { score: maxEval, move: bestMove };
+  } else {
+    let minEval = Infinity;
+    for (const move of moves) {
+      const { board: nb } = GameModule.applyMove(board, move.from, move.to);
+      const { score } = minimax(nb, depth - 1, alpha, beta, true, aiColor);
+      if (score < minEval) {
+        minEval = score;
+        bestMove = move;
+      }
+      beta = Math.min(beta, score);
+      if (beta <= alpha) break;
+    }
+    return { score: minEval, move: bestMove };
+  }
+}
+
+export class AI {
+  constructor(color = 'b', depth = 2) {
+    this.color = color;
+    this.depth = depth;
+  }
+
+  getBestMove(board) {
+    const result = minimax(board, this.depth, -Infinity, Infinity, true, this.color);
+    return result.move;
+  }
+}
+
+export default { AI };

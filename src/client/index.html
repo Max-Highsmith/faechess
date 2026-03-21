@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fae Chess – Multi-Dimensional Chess Games</title>
+  <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+  <!-- Landing Page -->
+  <div id="landing-page">
+    <div class="landing-container">
+      <h1 class="landing-title">Fae Chess</h1>
+      <p class="landing-subtitle">Choose Your Dimension</p>
+
+      <!-- User section on landing page -->
+      <div id="landing-user-section">
+        <div id="landing-logged-out">
+          <button id="landing-login-btn" class="user-btn">Login / Sign Up</button>
+        </div>
+        <div id="landing-logged-in" class="hidden">
+          <p id="landing-user-email"></p>
+          <button id="landing-logout-btn" class="user-btn">Logout</button>
+        </div>
+      </div>
+
+      <div class="game-grid">
+        <button class="game-card" id="play-3d-chess">
+          <div class="game-icon">♟️</div>
+          <h2>3D Chess</h2>
+          <p>Classic Raumschach</p>
+          <p class="game-desc">5×5×5 three-dimensional chess with unicorns</p>
+        </button>
+
+        <button class="game-card disabled" id="play-5-board">
+          <div class="game-icon">🎲</div>
+          <h2>5 Board</h2>
+          <p>Coming Soon</p>
+          <p class="game-desc">Play across five interconnected boards</p>
+        </button>
+
+        <button class="game-card disabled" id="play-torus">
+          <div class="game-icon">🌀</div>
+          <h2>Torus Chess</h2>
+          <p>Coming Soon</p>
+          <p class="game-desc">Chess on a wraparound board topology</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D Chess Game View (hidden by default) -->
+  <div id="game-view" class="hidden">
+    <div id="ui">
+      <div class="game-header">
+        <button id="back-to-menu" class="back-btn">← Back to Menu</button>
+        <h1>Fae Chess</h1>
+        <h2>5×5×5 3D Chess</h2>
+      </div>
+
+      <!-- User section -->
+    <div id="user-section">
+      <div id="logged-out">
+        <button id="login-btn">Login / Sign Up</button>
+      </div>
+      <div id="logged-in" class="hidden">
+        <p id="user-email"></p>
+        <div id="subscription-status" class="hidden"></div>
+        <button id="subscribe-btn" class="hidden">Subscribe to Weekly Puzzles</button>
+        <button id="logout-btn">Logout</button>
+      </div>
+    </div>
+
+    <div id="turn">White to move</div>
+    <div id="status"></div>
+
+    <div id="captured">
+      <h3>Captured</h3>
+      <div class="cap-row" id="cap-white"></div>
+      <div class="cap-row" id="cap-black"></div>
+    </div>
+
+    <div id="controls">
+      <button id="btn-reset">New Game</button>
+      <button id="btn-undo">Undo</button>
+      <div class="ctrl-row">
+        <label>Style:</label>
+        <select id="skin-select">
+          <option value="classic">Classic</option>
+          <option value="minimal">Minimal</option>
+          <option value="abstract">Abstract</option>
+          <option value="greek">Greek Mythology</option>
+        </select>
+      </div>
+      <div class="ctrl-row">
+        <label>View:</label>
+        <select id="view-select">
+          <option value="3d">3D Orbital</option>
+          <option value="2d">2D Flat Boards</option>
+        </select>
+      </div>
+      <div class="ctrl-row">
+        <label>Perspective:</label>
+        <select id="perspective-select">
+          <option value="xy">Row×Col by Layer</option>
+          <option value="xz">Row×Layer by Col</option>
+          <option value="yz">Col×Layer by Row</option>
+          <option value="multi">Multi (All Views)</option>
+        </select>
+      </div>
+      <div class="ctrl-row">
+        <label class="ai-label">
+          <input type="checkbox" id="ai-toggle"> Play vs AI (Black)
+        </label>
+      </div>
+      <div class="ctrl-row">
+        <label>AI Level:</label>
+        <select id="ai-difficulty">
+          <option value="1">Easy</option>
+          <option value="2" selected>Medium</option>
+          <option value="3">Hard</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="puzzle-section">
+      <h3>Puzzles</h3>
+      <div id="puzzle-status"></div>
+      <div id="puzzle-controls" style="display:none; margin-bottom:6px;">
+        <button id="btn-hint">Hint</button>
+        <button id="btn-exit-puzzle">Back to Game</button>
+      </div>
+      <div id="puzzle-list"></div>
+    </div>
+
+    <div id="move-log"></div>
+    </div>
+  </div>
+  <!-- End Game View -->
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="modal hidden">
+    <div class="modal-content">
+      <button id="close-auth">&times;</button>
+      <h2 id="auth-title">Welcome to Fae Chess</h2>
+      <p id="auth-subtitle">Join the 3D chess community and track your puzzle progress</p>
+      <div id="auth-tabs">
+        <button class="tab active" data-tab="login">Login</button>
+        <button class="tab" data-tab="signup">Sign Up</button>
+      </div>
+      <form id="auth-form">
+        <input type="email" id="auth-email" placeholder="Email" required autocomplete="email" />
+        <input type="password" id="auth-password" placeholder="Password (min 6 characters)" required autocomplete="current-password" minlength="6" />
+        <button type="submit" id="auth-submit">Login</button>
+      </form>
+      <p id="auth-error" class="error hidden"></p>
+      <p id="auth-success" class="success hidden"></p>
+    </div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <!-- Scripts loaded as ES modules via Vite -->
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
