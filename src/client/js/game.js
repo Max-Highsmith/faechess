@@ -368,4 +368,39 @@ export class Game {
     const h = this.history[this.history.length - 1];
     return this.getMoveNotation(h.from, h.to, h.piece, h.captured);
   }
+
+  exportReport() {
+    let result = 'in_progress';
+    if (this.gameOver) {
+      if (this.result && this.result.includes('draw')) result = 'draw';
+      else if (this.result && this.result.includes('White')) result = 'white_wins';
+      else if (this.result && this.result.includes('Black')) result = 'black_wins';
+    }
+
+    const moves = this.history.map((h, i) => ({
+      num: Math.floor(i / 2) + 1,
+      color: h.turn,
+      notation: this.getMoveNotation(h.from, h.to, h.piece, h.captured),
+      from: coordToNotation(...h.from),
+      to: coordToNotation(...h.to),
+      piece: h.piece.type,
+      captured: h.captured ? h.captured.type : null
+    }));
+
+    const finalPosition = {};
+    for (const k of Object.keys(this.board)) {
+      const [x, y, z] = k.split(',').map(Number);
+      finalPosition[coordToNotation(x, y, z)] = this.board[k];
+    }
+
+    return {
+      format: 'faechess-v1',
+      variant: 'raumschach-5x5x5',
+      date: new Date().toISOString(),
+      totalMoves: this.history.length,
+      result,
+      moves,
+      finalPosition
+    };
+  }
 }
