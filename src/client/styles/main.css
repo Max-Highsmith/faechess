@@ -31,6 +31,10 @@ body { background: #1a1a2e; color: #eee; font-family: 'Segoe UI', sans-serif; ov
   cursor: pointer; margin: 2px; border-radius: 4px; font-size: 0.85em;
 }
 #controls button:hover { background: #1a1a5e; }
+#btn-surrender { background: #5e1a1a; border-color: #ff6b6b; color: #ff6b6b; }
+#btn-surrender:hover { background: #7a2020; }
+#btn-export { background: #1a3e2e; border-color: #7fdbca; color: #7fdbca; }
+#btn-export:hover { background: #1a5e3e; }
 .ctrl-row { margin-top: 8px; }
 .ctrl-row label { font-size: 0.85em; color: #888; margin-right: 4px; }
 .ctrl-row select { padding: 4px 6px; }

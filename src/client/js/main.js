@@ -369,6 +369,18 @@
     }
   });
 
+  // ── Surrender ────────────────────────────────────────────────
+
+  document.getElementById('btn-surrender').addEventListener('click', () => {
+    if (puzzleMode || game.gameOver) return;
+    const loser = game.turn === 'w' ? 'White' : 'Black';
+    const winner = game.turn === 'w' ? 'Black' : 'White';
+    if (!confirm(`${loser} surrenders. ${winner} wins. Are you sure?`)) return;
+    game.gameOver = true;
+    game.result = `${winner} wins by resignation!`;
+    updateUI();
+  });
+
   // ── Export ─────────────────────────────────────────────────────
 
   document.getElementById('btn-export').addEventListener('click', () => {
