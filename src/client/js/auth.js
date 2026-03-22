@@ -65,6 +65,11 @@ function setupAuthHandlers() {
     closeAuthBtn.addEventListener('click', closeAuthModal);
   }
 
+  const googleBtn = document.getElementById('google-login-btn');
+  if (googleBtn) {
+    googleBtn.addEventListener('click', handleGoogleLogin);
+  }
+
   authTabs.forEach(tab => {
     tab.addEventListener('click', () => switchAuthTab(tab.dataset.tab));
   });
@@ -118,6 +123,22 @@ function switchAuthTab(mode) {
   }
 
   hideError();
+}
+
+/**
+ * Handle Google OAuth login
+ */
+async function handleGoogleLogin() {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+    if (error) showError(error.message);
+  } catch (error) {
+    showError('Failed to sign in with Google');
+    console.error('Google auth error:', error);
+  }
 }
 
 /**

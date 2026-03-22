@@ -158,6 +158,20 @@ canvas { display: block; }
   cursor: pointer;
 }
 #auth-submit:hover { background: #5fc4b1; }
+.google-btn {
+  width: 100%; padding: 10px; background: #fff; color: #333;
+  border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.google-btn:hover { background: #f0f0f0; }
+.google-btn svg { flex-shrink: 0; }
+.auth-divider {
+  display: flex; align-items: center; margin: 14px 0; color: #666; font-size: 0.8em;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; border-bottom: 1px solid #444;
+}
+.auth-divider span { padding: 0 10px; }
 #auth-subtitle {
   color: #aaa; font-size: 0.9em; margin-bottom: 16px; margin-top: -8px;
 }
