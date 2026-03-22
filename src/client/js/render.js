@@ -28,7 +28,6 @@ const BoardRenderer = (() => {
     new THREE.Color(0x4488ff), // blue
   ];
   const LAYER_TINT_STRENGTH = 0.18;
-  const PLATFORM_TINT_STRENGTH = 0.35;
 
   function cellWorldPos(x, y, z) {
     let worldX, worldY, worldZ;
@@ -772,7 +771,9 @@ const BoardRenderer = (() => {
       const platformGeo = new THREE.BoxGeometry(
         BOARD_SIZE * CELL_SIZE + 0.1, 0.05, BOARD_SIZE * CELL_SIZE + 0.1
       );
-      const platformColor = new THREE.Color(0x222244).lerp(LAYER_TINTS[stackIdx], PLATFORM_TINT_STRENGTH);
+      // Platform tint: in xy mode stackIdx=z, in xz stackIdx=y, in yz stackIdx=x
+      // We don't tint platforms by layer since they represent different axes per view
+      const platformColor = new THREE.Color(0x222244);
       const platformMat = new THREE.MeshPhongMaterial({
         color: platformColor, transparent: true, opacity: 0.3
       });
@@ -798,7 +799,8 @@ const BoardRenderer = (() => {
         for (let x = 0; x < BOARD_SIZE; x++) {
           const isLight = (x + y + stackIdx) % 2 === 0;
           const baseColor = new THREE.Color(isLight ? 0xd4c89a : 0x6b5b3a);
-          const tintedColor = baseColor.lerp(LAYER_TINTS[stackIdx], LAYER_TINT_STRENGTH);
+          // Always tint by the actual z-layer, not the display stack
+          const tintedColor = baseColor.lerp(LAYER_TINTS[logZ], LAYER_TINT_STRENGTH);
           const geo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.1, CELL_SIZE * 0.95);
           const mat = new THREE.MeshPhongMaterial({
             color: tintedColor, transparent: true, opacity: 0.85

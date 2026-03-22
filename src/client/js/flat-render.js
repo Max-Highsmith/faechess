@@ -203,8 +203,8 @@ const FlatRenderer = (() => {
           ctx.fillStyle = isLight ? LIGHT_COLOR : DARK_COLOR;
           ctx.fillRect(px, py, cellPx, cellPx);
 
-          // Layer color tint
-          ctx.fillStyle = LAYER_TINT_RGBA[stackIdx];
+          // Layer color tint (always based on z-layer, not display stack)
+          ctx.fillStyle = LAYER_TINT_RGBA[z];
           ctx.fillRect(px, py, cellPx, cellPx);
 
           if (checkCell && checkCell[0] === x && checkCell[1] === y && checkCell[2] === z) {
