@@ -762,7 +762,7 @@ const BoardRenderer = (() => {
 
     // Remove old platforms, labels, and lines
     scene.children = scene.children.filter(child =>
-      !(child.userData && (child.userData.isLevelPlatform || child.userData.isLevelLabel || child.userData.isLevelLine))
+      !(child.userData && (child.userData.isLevelPlatform || child.userData.isLevelLabel || child.userData.isLevelLine || child.userData.isCoordLabel))
     );
 
     const stackDim = viewMode === 'xy' ? BOARD_SIZE : (viewMode === 'xz' ? BOARD_SIZE : BOARD_SIZE);
@@ -783,6 +783,7 @@ const BoardRenderer = (() => {
       scene.add(platform);
 
       addLevelLabel(stackIdx);
+      addCoordinateLabels(stackIdx);
 
       if (stackIdx < stackDim - 1) {
         const lineGeo = new THREE.BufferGeometry().setFromPoints([
@@ -861,6 +862,62 @@ const BoardRenderer = (() => {
     sprite.scale.set(2, 1, 1);
     sprite.userData = { isLevelLabel: true };
     scene.add(sprite);
+  }
+
+  function createCoordSprite(text) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#8899aa';
+    ctx.font = 'bold 40px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 32, 32);
+    const texture = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.6 });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(0.5, 0.5, 1);
+    return sprite;
+  }
+
+  function addCoordinateLabels(stackIdx) {
+    const levelY = stackIdx * LEVEL_GAP;
+
+    for (let i = 0; i < BOARD_SIZE; i++) {
+      // Horizontal axis labels (along worldX, at front edge of board)
+      let hLabel;
+      switch (viewMode) {
+        case 'xy': hLabel = String.fromCharCode(97 + i); break; // a-e (column)
+        case 'xz': hLabel = String.fromCharCode(97 + i); break; // a-e (column)
+        case 'yz': hLabel = String(i + 1); break;                // 1-5 (row)
+      }
+
+      const hSprite = createCoordSprite(hLabel);
+      hSprite.position.set(
+        i * CELL_SIZE - BOARD_OFFSET,
+        levelY,
+        BOARD_OFFSET + 0.7
+      );
+      hSprite.userData = { isCoordLabel: true };
+      scene.add(hSprite);
+
+      // Vertical axis labels (along worldZ, at right edge of board)
+      let vLabel;
+      switch (viewMode) {
+        case 'xy': vLabel = String(i + 1); break;                // 1-5 (row)
+        case 'xz': vLabel = String.fromCharCode(65 + i); break;  // A-E (layer)
+        case 'yz': vLabel = String.fromCharCode(65 + i); break;  // A-E (layer)
+      }
+
+      const vSprite = createCoordSprite(vLabel);
+      vSprite.position.set(
+        BOARD_OFFSET + 0.7,
+        levelY,
+        i * CELL_SIZE - BOARD_OFFSET
+      );
+      vSprite.userData = { isCoordLabel: true };
+      scene.add(vSprite);
+    }
   }
 
   // ── Piece rendering ────────────────────────────────────────────
