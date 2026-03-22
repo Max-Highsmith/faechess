@@ -325,6 +325,26 @@ canvas { display: block; }
 }
 
 /* ===================================
+   MODE SELECT SCREEN
+   =================================== */
+
+#mode-select {
+  width: 100vw; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  overflow-y: auto;
+}
+#mode-select .back-btn { position: absolute; top: 20px; left: 20px; }
+
+/* Mode visibility in game view */
+.mode-game, .mode-ai, .mode-puzzles { display: none; }
+#game-view.mode-pvp .mode-game { display: block; }
+#game-view.mode-pvp .mode-ai { display: none; }
+#game-view.mode-pvai .mode-game { display: block; }
+#game-view.mode-pvai .mode-ai { display: block; }
+#game-view.mode-puzzles .mode-puzzles { display: block; }
+
+/* ===================================
    ANALYZER VIEW
    =================================== */
 

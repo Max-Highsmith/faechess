@@ -56,6 +56,35 @@
     </div>
   </div>
 
+  <!-- Mode Select Screen (hidden by default) -->
+  <div id="mode-select" class="hidden">
+    <div class="landing-container">
+      <button id="mode-back" class="back-btn">← Back to Menu</button>
+      <h1 class="landing-title">3D Chess</h1>
+      <p class="landing-subtitle">Choose Game Mode</p>
+      <div class="game-grid">
+        <button class="game-card" id="mode-pvp">
+          <div class="game-icon">⚔️</div>
+          <h2>Player vs Player</h2>
+          <p>Local Multiplayer</p>
+          <p class="game-desc">Two players on the same device</p>
+        </button>
+        <button class="game-card" id="mode-pvai">
+          <div class="game-icon">🤖</div>
+          <h2>Player vs AI</h2>
+          <p>Single Player</p>
+          <p class="game-desc">Challenge the minimax engine</p>
+        </button>
+        <button class="game-card" id="mode-puzzles">
+          <div class="game-icon">🧩</div>
+          <h2>Puzzles</h2>
+          <p>Train Your Skills</p>
+          <p class="game-desc">Find the best move in one</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 3D Chess Game View (hidden by default) -->
   <div id="game-view" class="hidden">
     <div id="ui">
@@ -78,20 +107,24 @@
       </div>
     </div>
 
-    <div id="turn">White to move</div>
-    <div id="status"></div>
+    <div class="mode-game">
+      <div id="turn">White to move</div>
+      <div id="status"></div>
 
-    <div id="captured">
-      <h3>Captured</h3>
-      <div class="cap-row" id="cap-white"></div>
-      <div class="cap-row" id="cap-black"></div>
+      <div id="captured">
+        <h3>Captured</h3>
+        <div class="cap-row" id="cap-white"></div>
+        <div class="cap-row" id="cap-black"></div>
+      </div>
     </div>
 
     <div id="controls">
-      <button id="btn-reset">New Game</button>
-      <button id="btn-undo">Undo</button>
-      <button id="btn-surrender">Surrender</button>
-      <button id="btn-export">Export Game</button>
+      <div class="mode-game">
+        <button id="btn-reset">New Game</button>
+        <button id="btn-undo">Undo</button>
+        <button id="btn-surrender">Surrender</button>
+        <button id="btn-export">Export Game</button>
+      </div>
       <div class="ctrl-row">
         <label>Style:</label>
         <select id="skin-select">
@@ -117,12 +150,7 @@
           <option value="multi">Multi (All Views)</option>
         </select>
       </div>
-      <div class="ctrl-row">
-        <label class="ai-label">
-          <input type="checkbox" id="ai-toggle"> Play vs AI (Black)
-        </label>
-      </div>
-      <div class="ctrl-row">
+      <div class="ctrl-row mode-ai" id="ai-difficulty-row">
         <label>AI Level:</label>
         <select id="ai-difficulty">
           <option value="1">Easy</option>
@@ -132,7 +160,7 @@
       </div>
     </div>
 
-    <div id="puzzle-section">
+    <div id="puzzle-section" class="mode-puzzles">
       <h3>Puzzles</h3>
       <div id="puzzle-status"></div>
       <div id="puzzle-controls" style="display:none; margin-bottom:6px;">
@@ -142,7 +170,7 @@
       <div id="puzzle-list"></div>
     </div>
 
-    <div id="move-log"></div>
+    <div id="move-log" class="mode-game"></div>
     </div>
   </div>
   <!-- End Game View -->

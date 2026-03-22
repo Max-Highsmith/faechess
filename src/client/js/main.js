@@ -466,14 +466,35 @@
     }
   });
 
-  // ── AI toggle ──────────────────────────────────────────────────
+  // ── Game mode ────────────────────────────────────────────────
 
-  document.getElementById('ai-toggle').addEventListener('change', (e) => {
-    aiEnabled = e.target.checked;
-    if (aiEnabled && game.turn === ai.color && !game.gameOver) {
-      tryAIMove();
+  window.setGameMode = function (mode) {
+    // Reset game state
+    game.reset();
+    selected = null;
+    legalTargets = [];
+    ViewProxy.clearHighlights();
+    ViewProxy.updatePieces(game.board);
+    moveLogEl.innerHTML = '';
+
+    if (mode === 'pvai') {
+      aiEnabled = true;
+      ai = new ChessAI.AI('b', parseInt(document.getElementById('ai-difficulty').value, 10));
+    } else {
+      aiEnabled = false;
     }
-  });
+
+    if (mode === 'puzzles') {
+      buildPuzzleList();
+    }
+
+    puzzleMode = false;
+    activePuzzle = null;
+    puzzleStatusEl.textContent = '';
+    puzzleControlsEl.style.display = 'none';
+
+    updateUI();
+  };
 
   document.getElementById('ai-difficulty').addEventListener('change', (e) => {
     ai = new ChessAI.AI('b', parseInt(e.target.value, 10));

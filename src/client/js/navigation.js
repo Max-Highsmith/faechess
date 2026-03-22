@@ -1,51 +1,48 @@
 /**
- * Navigation between landing page and game views
+ * Navigation between landing page, mode select, and game views
  */
 
-/**
- * Show the landing page
- */
-export function showLandingPage() {
-  const landingPage = document.getElementById('landing-page');
-  const gameView = document.getElementById('game-view');
-  const analyzerView = document.getElementById('analyzer-view');
+const allViews = ['landing-page', 'mode-select', 'game-view', 'analyzer-view'];
 
-  if (landingPage) landingPage.classList.remove('hidden');
-  if (gameView) gameView.classList.add('hidden');
-  if (analyzerView) analyzerView.classList.add('hidden');
+function hideAll() {
+  for (const id of allViews) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  }
 }
 
-/**
- * Show the 3D chess game
- */
-export function show3DChessGame() {
-  const landingPage = document.getElementById('landing-page');
-  const gameView = document.getElementById('game-view');
-  const analyzerView = document.getElementById('analyzer-view');
-
-  if (landingPage) landingPage.classList.add('hidden');
-  if (analyzerView) analyzerView.classList.add('hidden');
-  if (gameView) gameView.classList.remove('hidden');
+function showView(id) {
+  hideAll();
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('hidden');
 }
 
-/**
- * Show the game analyzer
- */
-export function showAnalyzer() {
-  const landingPage = document.getElementById('landing-page');
-  const gameView = document.getElementById('game-view');
-  const analyzerView = document.getElementById('analyzer-view');
+export function showLandingPage() { showView('landing-page'); }
+export function showModeSelect() { showView('mode-select'); }
+export function showAnalyzer() { showView('analyzer-view'); }
 
-  if (landingPage) landingPage.classList.add('hidden');
-  if (gameView) gameView.classList.add('hidden');
-  if (analyzerView) analyzerView.classList.remove('hidden');
+export function startGame(mode) {
+  const gameView = document.getElementById('game-view');
+  if (!gameView) return;
+
+  // Remove old mode classes
+  gameView.classList.remove('mode-pvp', 'mode-pvai', 'mode-puzzles');
+
+  // Apply new mode class
+  gameView.classList.add('mode-' + mode);
+
+  showView('game-view');
+
+  // Tell main.js to set up the mode
+  if (typeof window.setGameMode === 'function') {
+    window.setGameMode(mode);
+  }
 }
 
 /**
  * Sync user authentication UI between landing and game views
  */
 export function syncAuthUI(isLoggedIn, userEmail) {
-  // Landing page user section
   const landingLoggedIn = document.getElementById('landing-logged-in');
   const landingLoggedOut = document.getElementById('landing-logged-out');
   const landingUserEmail = document.getElementById('landing-user-email');
@@ -59,20 +56,31 @@ export function syncAuthUI(isLoggedIn, userEmail) {
  * Initialize navigation event handlers
  */
 export function initNavigation() {
-  // Play 3D Chess button
+  // 3D Chess card → mode select
   const play3DChess = document.getElementById('play-3d-chess');
   if (play3DChess) {
-    play3DChess.addEventListener('click', () => {
-      show3DChessGame();
-    });
+    play3DChess.addEventListener('click', () => showModeSelect());
   }
 
-  // Back to menu button
+  // Mode select back → landing
+  const modeBack = document.getElementById('mode-back');
+  if (modeBack) {
+    modeBack.addEventListener('click', () => showLandingPage());
+  }
+
+  // Mode cards → start game with mode
+  const modes = ['pvp', 'pvai', 'puzzles'];
+  for (const mode of modes) {
+    const btn = document.getElementById('mode-' + mode);
+    if (btn) {
+      btn.addEventListener('click', () => startGame(mode));
+    }
+  }
+
+  // Game view back → mode select (not landing)
   const backToMenu = document.getElementById('back-to-menu');
   if (backToMenu) {
-    backToMenu.addEventListener('click', () => {
-      showLandingPage();
-    });
+    backToMenu.addEventListener('click', () => showModeSelect());
   }
 
   // Landing page auth buttons
@@ -81,12 +89,10 @@ export function initNavigation() {
 
   if (landingLoginBtn) {
     landingLoginBtn.addEventListener('click', () => {
-      // Import auth functions dynamically to avoid circular dependencies
       import('./auth.js').then(({ openAuthModal }) => {
         if (typeof openAuthModal === 'function') {
           openAuthModal('login');
         } else {
-          // Fallback: trigger the main login button
           const mainLoginBtn = document.getElementById('login-btn');
           if (mainLoginBtn) mainLoginBtn.click();
         }
@@ -96,7 +102,6 @@ export function initNavigation() {
 
   if (landingLogoutBtn) {
     landingLogoutBtn.addEventListener('click', () => {
-      // Trigger the main logout button
       const mainLogoutBtn = document.getElementById('logout-btn');
       if (mainLogoutBtn) mainLogoutBtn.click();
     });
@@ -105,17 +110,13 @@ export function initNavigation() {
   // Analyzer card
   const openAnalyzer = document.getElementById('open-analyzer');
   if (openAnalyzer) {
-    openAnalyzer.addEventListener('click', () => {
-      showAnalyzer();
-    });
+    openAnalyzer.addEventListener('click', () => showAnalyzer());
   }
 
   // Analyzer back button
   const analyzerBack = document.getElementById('analyzer-back');
   if (analyzerBack) {
-    analyzerBack.addEventListener('click', () => {
-      showLandingPage();
-    });
+    analyzerBack.addEventListener('click', () => showLandingPage());
   }
 
   // Disabled game cards (5 Board and Torus)
