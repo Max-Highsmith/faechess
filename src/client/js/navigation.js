@@ -2,7 +2,7 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['welcome-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup'];
+const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup'];
 
 function hideAll() {
   for (const id of allViews) {
@@ -18,6 +18,7 @@ function showView(id) {
 }
 
 export function showLandingPage() { showView('landing-page'); }
+export function showProfileSetup() { showView('profile-setup-view'); }
 export function showModeSelect() { showView('mode-select'); }
 export function showAnalyzer() { showView('analyzer-view'); }
 export function showOnlineSetup() { showView('online-setup'); }
@@ -151,6 +152,14 @@ export function initNavigation() {
     landingLogoutBtn.addEventListener('click', () => {
       const mainLogoutBtn = document.getElementById('logout-btn');
       if (mainLogoutBtn) mainLogoutBtn.click();
+    });
+  }
+
+  // Edit Profile button
+  const editProfileBtn = document.getElementById('landing-edit-profile-btn');
+  if (editProfileBtn) {
+    editProfileBtn.addEventListener('click', () => {
+      import('./profile.js').then(({ showEditProfile }) => showEditProfile());
     });
   }
 

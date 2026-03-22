@@ -45,6 +45,29 @@
     }
   };
 
+  // ── Promotion modal ──────────────────────────────────────────
+  const promotionModal = document.getElementById('promotion-modal');
+  const promotionBtns = promotionModal.querySelectorAll('.promotion-btn');
+
+  function showPromotionModal(color) {
+    // Update icons based on color
+    const icons = promotionModal.querySelectorAll('.promotion-icon');
+    icons[0].textContent = color === 'w' ? '♕' : '♛';
+    icons[1].textContent = color === 'w' ? '♘' : '♞';
+
+    return new Promise(resolve => {
+      function handler(e) {
+        const btn = e.currentTarget;
+        const piece = btn.dataset.piece;
+        promotionBtns.forEach(b => b.removeEventListener('click', handler));
+        promotionModal.classList.add('hidden');
+        resolve(piece);
+      }
+      promotionBtns.forEach(b => b.addEventListener('click', handler));
+      promotionModal.classList.remove('hidden');
+    });
+  }
+
   // ── DOM refs ───────────────────────────────────────────────────
   const turnEl = document.getElementById('turn');
   const statusEl = document.getElementById('status');
@@ -109,44 +132,52 @@
     if (selected) {
       const isTarget = legalTargets.some(([tx, ty, tz]) => tx === x && ty === y && tz === z);
       if (isTarget) {
-        const moveNum = Math.floor(game.history.length / 2) + 1;
         const from = selected;
         const movingPiece = game.board[Raumschach.key(...from)];
-        const targetPiece = game.board[k];
 
-        if (game.makeMove(from, [x, y, z])) {
-          const notation = game.getMoveNotation(from, [x, y, z], movingPiece, targetPiece);
-          addMoveToLog(notation, moveNum);
-          selected = null;
-          legalTargets = [];
-          ViewProxy.clearHighlights();
-          ViewProxy.updatePieces(game.board);
-          ViewProxy.highlightLastMove(from, [x, y, z]);
+        const executeMove = (promoteTo) => {
+          const moveNum = Math.floor(game.history.length / 2) + 1;
+          const targetPiece = game.board[k];
 
-          if (game.isCheck() && !game.gameOver) {
-            const kp = findCurrentKing();
-            if (kp) ViewProxy.highlightCheck(...kp);
+          if (game.makeMove(from, [x, y, z], promoteTo)) {
+            const notation = game.getMoveNotation(from, [x, y, z], movingPiece, targetPiece);
+            addMoveToLog(notation, moveNum);
+            selected = null;
+            legalTargets = [];
+            ViewProxy.clearHighlights();
+            ViewProxy.updatePieces(game.board);
+            ViewProxy.highlightLastMove(from, [x, y, z]);
+
+            if (game.isCheck() && !game.gameOver) {
+              const kp = findCurrentKing();
+              if (kp) ViewProxy.highlightCheck(...kp);
+            }
+
+            updateUI();
+
+            if (multiplayerEnabled) {
+              Multiplayer.submitMove(from, [x, y, z]).catch(err => {
+                console.error('Move rejected by server:', err);
+                game.undo();
+                if (moveLogEl.lastChild) moveLogEl.removeChild(moveLogEl.lastChild);
+                ViewProxy.clearHighlights();
+                ViewProxy.updatePieces(game.board);
+                updateUI();
+                statusEl.textContent = 'Move rejected — try again';
+                statusEl.style.color = '#ff6b6b';
+              });
+            } else {
+              tryAIMove();
+            }
           }
+        };
 
-          updateUI();
-
-          if (multiplayerEnabled) {
-            // Send move to server (optimistic update — rollback on rejection)
-            Multiplayer.submitMove(from, [x, y, z]).catch(err => {
-              console.error('Move rejected by server:', err);
-              game.undo();
-              if (moveLogEl.lastChild) moveLogEl.removeChild(moveLogEl.lastChild);
-              ViewProxy.clearHighlights();
-              ViewProxy.updatePieces(game.board);
-              updateUI();
-              statusEl.textContent = 'Move rejected — try again';
-              statusEl.style.color = '#ff6b6b';
-            });
-          } else {
-            tryAIMove();
-          }
-          return;
+        if (Raumschach.isPromotionMove(game.board, from, [x, y, z])) {
+          showPromotionModal(movingPiece.color).then(executeMove);
+        } else {
+          executeMove(undefined);
         }
+        return;
       }
 
       if (piece && piece.color === game.turn) {
@@ -218,12 +249,57 @@
   }
 
   function handleGameEvent(type, payload) {
+    if (type === 'player_joined') {
+      // Update opponent display when they join
+      if (payload.profile) {
+        const opNameEl = document.getElementById('mp-opponent-name');
+        const opAvatarEl = document.getElementById('mp-opponent-avatar');
+        if (opNameEl) opNameEl.textContent = payload.profile.game_id || 'Anonymous';
+        if (opAvatarEl && payload.profile.avatar_url) {
+          opAvatarEl.src = payload.profile.avatar_url;
+          opAvatarEl.classList.remove('hidden');
+        }
+      }
+    }
     if (type === 'resign') {
       game.gameOver = true;
       const winner = payload.color === 'w' ? 'Black' : 'White';
       game.result = `${winner} wins by resignation!`;
       updateUI();
     }
+  }
+
+  function updateMultiplayerProfiles() {
+    import('./profile.js').then(({ getDisplayName, getAvatarUrl }) => {
+      // My profile
+      const myNameEl = document.getElementById('mp-my-name');
+      const myAvatarEl = document.getElementById('mp-my-avatar');
+      if (myNameEl) myNameEl.textContent = getDisplayName();
+      if (myAvatarEl && getAvatarUrl()) {
+        myAvatarEl.src = getAvatarUrl();
+        myAvatarEl.classList.remove('hidden');
+      }
+    });
+
+    import('./auth.js').then(({ getCurrentUser }) => {
+      const profiles = Multiplayer.getPlayerProfiles();
+      const currentUserId = getCurrentUser()?.id;
+
+      // Opponent profile
+      const opNameEl = document.getElementById('mp-opponent-name');
+      const opAvatarEl = document.getElementById('mp-opponent-avatar');
+      const opponentEntry = Object.entries(profiles).find(([id]) => id !== currentUserId);
+      if (opponentEntry) {
+        const [, profile] = opponentEntry;
+        if (opNameEl) opNameEl.textContent = profile.game_id || 'Anonymous';
+        if (opAvatarEl && profile.avatar_url) {
+          opAvatarEl.src = profile.avatar_url;
+          opAvatarEl.classList.remove('hidden');
+        }
+      } else {
+        if (opNameEl) opNameEl.textContent = 'Waiting...';
+      }
+    });
   }
 
   // Expose for multiplayer module callbacks
@@ -485,19 +561,26 @@
         const fromKey = Raumschach.key(...from);
         const movingPiece = game.board[fromKey];
 
-        // Manually move (don't use game.makeMove to avoid turn switching)
-        const newBoard = {};
-        newBoard[k] = { type: movingPiece.type, color: 'w' };
-        game.board = newBoard;
-        game.turn = 'w';
+        const finishTutorialMove = (pieceType) => {
+          const newBoard = {};
+          newBoard[k] = { type: pieceType, color: 'w' };
+          game.board = newBoard;
+          game.turn = 'w';
 
-        tutorialPiecePos = [x, y, z];
+          tutorialPiecePos = [x, y, z];
 
-        ViewProxy.clearHighlights();
-        ViewProxy.updatePieces(game.board);
+          ViewProxy.clearHighlights();
+          ViewProxy.updatePieces(game.board);
 
-        // Re-highlight from new position
-        selectPiece(x, y, z);
+          // Re-highlight from new position
+          selectPiece(x, y, z);
+        };
+
+        if (Raumschach.isPromotionMove(game.board, from, [x, y, z])) {
+          showPromotionModal('w').then(choice => finishTutorialMove(choice));
+        } else {
+          finishTutorialMove(movingPiece.type);
+        }
         return;
       }
 
@@ -715,6 +798,9 @@
         const badge = document.getElementById('mp-color-badge');
         if (badge) badge.textContent = colorName;
       }
+
+      // Display player profiles
+      updateMultiplayerProfiles();
     }
 
     if (mode === 'puzzles') {

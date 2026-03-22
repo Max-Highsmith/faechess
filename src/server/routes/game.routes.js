@@ -13,6 +13,16 @@ function generateInviteCode() {
   return crypto.randomBytes(6).toString('base64url').slice(0, 8);
 }
 
+async function fetchPlayerProfiles(playerIds) {
+  const ids = playerIds.filter(Boolean);
+  if (ids.length === 0) return [];
+  const { data } = await supabase
+    .from('users')
+    .select('id, game_id, avatar_url')
+    .in('id', ids);
+  return data || [];
+}
+
 /**
  * POST /api/games
  * Create a new game. Body: { color: 'white' | 'black' | 'random' }
@@ -49,10 +59,13 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (error) throw error;
 
+    const players = await fetchPlayerProfiles([data.white_player_id, data.black_player_id]);
+
     res.json({
       game_id: data.id,
       invite_code: data.invite_code,
-      color: color === 'white' ? 'w' : 'b'
+      color: color === 'white' ? 'w' : 'b',
+      players
     });
   } catch (error) {
     console.error('Error creating game:', error);
@@ -83,10 +96,12 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
     // If the player is already in this game, let them reconnect
     if (game.white_player_id === userId || game.black_player_id === userId) {
       const myColor = game.white_player_id === userId ? 'w' : 'b';
+      const players = await fetchPlayerProfiles([game.white_player_id, game.black_player_id]);
       return res.json({
         game_id: game.id,
         color: myColor,
-        status: game.status
+        status: game.status,
+        players
       });
     }
 
@@ -115,10 +130,13 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
 
     if (updateErr) throw updateErr;
 
+    const players = await fetchPlayerProfiles([updated.white_player_id, updated.black_player_id]);
+
     res.json({
       game_id: updated.id,
       color: joinerColor,
-      status: updated.status
+      status: updated.status,
+      players
     });
   } catch (error) {
     console.error('Error joining game:', error);
@@ -155,11 +173,13 @@ router.get('/:id', requireAuth, async (req, res) => {
       .order('move_number', { ascending: true });
 
     const myColor = game.white_player_id === userId ? 'w' : 'b';
+    const players = await fetchPlayerProfiles([game.white_player_id, game.black_player_id]);
 
     res.json({
       ...game,
       my_color: myColor,
-      moves: moves || []
+      moves: moves || [],
+      players
     });
   } catch (error) {
     console.error('Error fetching game:', error);

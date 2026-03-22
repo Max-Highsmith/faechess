@@ -11,6 +11,7 @@ import * as TutorialModule from './tutorial.js';
 import * as MultiplayerModule from './multiplayer.js';
 import { initAuth, getCurrentUser, getAuthToken, isAuthenticated } from './auth.js';
 import { initNavigation, startOnlineGame, showOnlineSetup } from './navigation.js';
+import { initProfileSetup } from './profile.js';
 
 // Make THREE and OrbitControls available globally for render.js
 window.THREE = THREE;
@@ -28,6 +29,9 @@ initAuth();
 
 // Initialize navigation
 initNavigation();
+
+// Initialize profile setup handlers
+initProfileSetup();
 
 // Initialize music player
 initMusicPlayer();

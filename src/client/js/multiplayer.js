@@ -9,6 +9,7 @@ let activeGame = null;   // { id, invite_code, myColor, status }
 let channel = null;
 let onMoveReceived = null;
 let onGameEvent = null;
+let playerProfiles = {};  // { [userId]: { id, game_id, avatar_url } }
 
 /**
  * Register callbacks from main.js.
@@ -21,6 +22,7 @@ export function setCallbacks(onMove, onEvent) {
 }
 
 export function getActiveGame() { return activeGame; }
+export function getPlayerProfiles() { return playerProfiles; }
 
 export function isMyTurn(currentTurn) {
   return activeGame && currentTurn === activeGame.myColor;
@@ -92,6 +94,10 @@ export async function createGame(color) {
     status: 'waiting'
   };
 
+  if (data.players) {
+    data.players.forEach(p => { playerProfiles[p.id] = p; });
+  }
+
   subscribeToGame(data.game_id);
   return data;
 }
@@ -120,15 +126,22 @@ export async function joinGame(inviteCode) {
     status: data.status
   };
 
+  if (data.players) {
+    data.players.forEach(p => { playerProfiles[p.id] = p; });
+  }
+
   subscribeToGame(data.game_id);
 
   // Broadcast player_joined from client so the creator's channel picks it up
+  // Include joiner's profile so the creator can display it
+  const user = getCurrentUser();
+  const joinerProfile = user ? playerProfiles[user.id] : null;
   if (data.status === 'active' && channel) {
     setTimeout(() => {
       channel.send({
         type: 'broadcast',
         event: 'player_joined',
-        payload: { color: data.color }
+        payload: { color: data.color, profile: joinerProfile }
       }).then(() => console.log('[MP] Broadcasted player_joined from client'));
     }, 500); // small delay to ensure channel is subscribed
   }
@@ -157,6 +170,10 @@ export async function loadGame(gameId) {
     myColor: data.my_color,
     status: data.status
   };
+
+  if (data.players) {
+    data.players.forEach(p => { playerProfiles[p.id] = p; });
+  }
 
   subscribeToGame(data.id);
   return data;
@@ -238,4 +255,5 @@ export function cleanup() {
     channel = null;
   }
   activeGame = null;
+  playerProfiles = {};
 }

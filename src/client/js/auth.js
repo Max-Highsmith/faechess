@@ -12,9 +12,7 @@ export async function initAuth() {
   if (session) {
     currentUser = session.user;
     await onAuthStateChange(true);
-    // Returning user: skip welcome view, go straight to landing page
-    const { showLandingPage } = await import('./navigation.js');
-    showLandingPage();
+    // onAuthStateChange handles navigation (landing page or profile setup)
   } else {
     await onAuthStateChange(false);
   }
@@ -217,6 +215,10 @@ async function handleWelcomeAuthSubmit(e) {
     } else {
       if (mode === 'signup' && result.data.user && !result.data.session) {
         showWelcomeSuccess('Check your email to confirm your account.');
+      } else if (mode === 'signup' && result.data.session) {
+        // Signup with immediate session — show profile setup
+        const { showProfileSetup } = await import('./navigation.js');
+        showProfileSetup();
       } else {
         // Successful login — navigate to landing page
         const { showLandingPage } = await import('./navigation.js');
@@ -287,6 +289,11 @@ async function handleAuthSubmit(e) {
         setTimeout(() => {
           closeAuthModal();
         }, 4000);
+      } else if (mode === 'signup' && result.data.session) {
+        // Signup with immediate session — show profile setup
+        closeAuthModal();
+        const { showProfileSetup } = await import('./navigation.js');
+        showProfileSetup();
       } else {
         closeAuthModal();
       }
@@ -350,7 +357,6 @@ async function handleSubscribe() {
 async function onAuthStateChange(isLoggedIn) {
   const loggedInSection = document.getElementById('logged-in');
   const loggedOutSection = document.getElementById('logged-out');
-  const userEmailEl = document.getElementById('user-email');
 
   // Game view auth UI
   if (loggedInSection) {
@@ -362,9 +368,10 @@ async function onAuthStateChange(isLoggedIn) {
   }
 
   if (isLoggedIn && currentUser) {
-    if (userEmailEl) {
-      userEmailEl.textContent = currentUser.email;
-    }
+    // Fetch profile and update display name across views
+    const { fetchMyProfile, updateProfileUI } = await import('./profile.js');
+    const profile = await fetchMyProfile();
+    updateProfileUI();
 
     // Check subscription status
     await checkSubscriptionStatus();
@@ -375,10 +382,16 @@ async function onAuthStateChange(isLoggedIn) {
     }
 
     // If welcome view is showing, navigate to landing page
+    // (For new users without a game_id, show profile setup instead)
     const welcomeView = document.getElementById('welcome-view');
     if (welcomeView && !welcomeView.classList.contains('hidden')) {
-      const { showLandingPage } = await import('./navigation.js');
-      showLandingPage();
+      if (profile && !profile.game_id) {
+        const { showProfileSetup } = await import('./navigation.js');
+        showProfileSetup();
+      } else {
+        const { showLandingPage } = await import('./navigation.js');
+        showLandingPage();
+      }
     }
 
     // Try to join a pending invite game (from invite link opened before auth was ready)
@@ -390,13 +403,9 @@ async function onAuthStateChange(isLoggedIn) {
   // Sync landing page auth UI
   const landingLoggedIn = document.getElementById('landing-logged-in');
   const landingLoggedOut = document.getElementById('landing-logged-out');
-  const landingUserEmail = document.getElementById('landing-user-email');
 
   if (landingLoggedIn) landingLoggedIn.classList.toggle('hidden', !isLoggedIn);
   if (landingLoggedOut) landingLoggedOut.classList.toggle('hidden', isLoggedIn);
-  if (landingUserEmail && isLoggedIn && currentUser) {
-    landingUserEmail.textContent = currentUser.email;
-  }
 }
 
 /**

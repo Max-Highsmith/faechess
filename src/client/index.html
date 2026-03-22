@@ -45,6 +45,43 @@
     </div>
   </div>
 
+  <!-- Profile Setup Screen (shown after first signup) -->
+  <div id="profile-setup-view" class="hidden">
+    <div class="welcome-container">
+      <h1 class="landing-title">Fae Chess</h1>
+      <p class="landing-subtitle">Set Up Your Profile</p>
+
+      <div class="welcome-auth-box">
+        <h2 class="welcome-auth-title">Choose Your Game ID</h2>
+        <p class="welcome-auth-subtitle">This is how other players will see you</p>
+
+        <div id="avatar-upload-section">
+          <div id="avatar-preview">
+            <div id="avatar-placeholder">?</div>
+            <img id="avatar-preview-img" class="hidden" alt="Avatar preview" />
+          </div>
+          <label for="avatar-file-input" class="avatar-upload-btn">Upload Photo</label>
+          <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
+          <p id="avatar-upload-error" class="error hidden"></p>
+        </div>
+
+        <div id="game-id-section">
+          <input type="text" id="game-id-input" placeholder="Enter Game ID (e.g. ChessKing42)"
+                 maxlength="20" minlength="3" autocomplete="off" />
+          <p id="game-id-hint">3-20 characters. Letters, numbers, underscores only.</p>
+          <p id="game-id-status" class="hidden"></p>
+        </div>
+
+        <p id="profile-save-error" class="error hidden"></p>
+        <button id="profile-save-btn" class="primary-btn">Save Profile</button>
+
+        <div class="welcome-divider"></div>
+
+        <button id="profile-skip-btn" class="guest-btn">Skip for Now</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Landing Page -->
   <div id="landing-page" class="hidden">
     <div class="landing-container">
@@ -57,8 +94,14 @@
           <button id="landing-login-btn" class="user-btn">Login / Sign Up</button>
         </div>
         <div id="landing-logged-in" class="hidden">
-          <p id="landing-user-email"></p>
-          <button id="landing-logout-btn" class="user-btn">Logout</button>
+          <div id="landing-user-info">
+            <img id="landing-avatar" class="user-avatar hidden" alt="Avatar" />
+            <span id="landing-user-display"></span>
+          </div>
+          <div id="landing-user-actions">
+            <button id="landing-edit-profile-btn" class="user-btn-small">Edit Profile</button>
+            <button id="landing-logout-btn" class="user-btn">Logout</button>
+          </div>
         </div>
       </div>
 
@@ -207,6 +250,17 @@
     <div class="mode-online">
       <div id="mp-info">
         <div id="mp-my-color">You play: <span id="mp-color-badge">—</span></div>
+        <div id="mp-player-info">
+          <div id="mp-my-profile" class="mp-profile-row">
+            <img id="mp-my-avatar" class="mp-avatar hidden" alt="" />
+            <span id="mp-my-name"></span>
+          </div>
+          <span class="mp-vs">vs</span>
+          <div id="mp-opponent-profile" class="mp-profile-row">
+            <img id="mp-opponent-avatar" class="mp-avatar hidden" alt="" />
+            <span id="mp-opponent-name">Waiting...</span>
+          </div>
+        </div>
         <div id="mp-opponent-status">
           <span class="status-dot online"></span>
           <span>Opponent connected</span>
@@ -353,7 +407,28 @@
     </div>
   </div>
 
+  <!-- Pawn Promotion Modal -->
+  <div id="promotion-modal" class="hidden">
+    <div class="promotion-content">
+      <p class="promotion-title">Promote pawn to:</p>
+      <div class="promotion-choices">
+        <button class="promotion-btn" data-piece="Q"><span class="promotion-icon">♕</span><span>Queen</span></button>
+        <button class="promotion-btn" data-piece="N"><span class="promotion-icon">♘</span><span>Knight</span></button>
+      </div>
+    </div>
+  </div>
+
   <div id="tooltip"></div>
+
+  <!-- Music Player -->
+  <div id="music-player">
+    <audio id="music-audio" src="/audio/pawns-of-the-infinite-game.mp3" loop preload="none"></audio>
+    <button id="music-toggle" title="Play music">
+      <span id="music-icon">&#9835;</span>
+    </button>
+    <span id="music-title">Pawns of the Infinite Game</span>
+    <input type="range" id="music-volume" min="0" max="1" step="0.01" value="0.5" title="Volume">
+  </div>
 
   <!-- Scripts loaded as ES modules via Vite -->
   <script type="module" src="/js/app.js"></script>

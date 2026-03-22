@@ -659,3 +659,185 @@ canvas { display: block; }
 }
 .status-dot.online { background: #44ff88; }
 .status-dot.offline { background: #666; }
+
+/* Multiplayer player profiles */
+#mp-player-info { margin: 8px 0; }
+.mp-profile-row {
+  display: flex; align-items: center; gap: 8px; margin: 4px 0;
+}
+.mp-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 1px solid #444; object-fit: cover;
+}
+.mp-vs { color: #666; font-size: 0.75em; margin: 2px 0; padding-left: 32px; }
+#mp-my-name, #mp-opponent-name { font-size: 0.85em; color: #ccc; }
+
+/* ===================================
+   PROFILE SETUP
+   =================================== */
+
+#profile-setup-view {
+  width: 100vw; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 50%, #16213e 100%);
+  overflow-y: auto;
+}
+
+#avatar-upload-section { text-align: center; margin-bottom: 20px; }
+
+#avatar-preview {
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 2px solid #444; margin: 0 auto 12px;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: #1a1a2e;
+}
+#avatar-placeholder { font-size: 2em; color: #555; }
+#avatar-preview-img { width: 100%; height: 100%; object-fit: cover; }
+
+.avatar-upload-btn {
+  display: inline-block; padding: 6px 16px;
+  background: #16213e; color: #7fdbca;
+  border: 1px solid #7fdbca; border-radius: 4px;
+  cursor: pointer; font-size: 0.85em; transition: all 0.2s;
+}
+.avatar-upload-btn:hover { background: #7fdbca; color: #16213e; }
+
+#avatar-upload-error, #profile-save-error {
+  font-size: 0.8em; margin-top: 8px;
+  color: #ff6b6b; padding: 8px;
+  background: rgba(255, 107, 107, 0.1); border-radius: 4px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+#game-id-section { margin-bottom: 20px; }
+#game-id-input {
+  width: 100%; padding: 10px; background: #1a1a2e;
+  border: 1px solid #444; color: #eee; border-radius: 4px;
+  font-size: 0.9em; margin-bottom: 4px;
+}
+#game-id-input:focus { outline: none; border-color: #7fdbca; }
+#game-id-hint { font-size: 0.75em; color: #666; margin-bottom: 4px; }
+#game-id-status { font-size: 0.8em; padding: 4px 8px; border-radius: 4px; }
+#game-id-status.available { color: #44ff88; background: rgba(68, 255, 136, 0.1); }
+#game-id-status.taken { color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+#game-id-status.invalid { color: #f7c948; background: rgba(247, 201, 72, 0.1); }
+
+/* User avatar displays */
+.user-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid #7fdbca; object-fit: cover;
+}
+
+/* Landing page user info */
+#landing-user-info {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin-bottom: 12px;
+}
+#landing-user-display { color: #7fdbca; font-size: 1em; }
+#landing-user-actions {
+  display: flex; gap: 8px; justify-content: center;
+}
+.user-btn-small {
+  background: transparent; color: #aaa; border: 1px solid #555;
+  padding: 6px 14px; border-radius: 6px; cursor: pointer;
+  font-size: 0.85em; transition: all 0.2s;
+}
+.user-btn-small:hover { color: #7fdbca; border-color: #7fdbca; }
+
+/* ===================================
+   PROMOTION MODAL
+   =================================== */
+
+#promotion-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6); z-index: 150;
+  display: flex; align-items: center; justify-content: center;
+}
+#promotion-modal.hidden { display: none; }
+
+.promotion-content {
+  background: #16213e; border: 2px solid #7fdbca; border-radius: 12px;
+  padding: 20px 24px; text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.promotion-title {
+  color: #7fdbca; font-size: 1em; margin-bottom: 14px; font-weight: bold;
+}
+.promotion-choices {
+  display: flex; gap: 16px; justify-content: center;
+}
+.promotion-btn {
+  background: #1a1a2e; border: 2px solid #444; border-radius: 8px;
+  padding: 12px 20px; cursor: pointer; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: #eee; min-width: 80px;
+}
+.promotion-btn:hover {
+  border-color: #7fdbca; background: #1a2740;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(127, 219, 202, 0.2);
+}
+.promotion-icon { font-size: 2em; }
+.promotion-btn span:last-child { font-size: 0.8em; color: #aaa; }
+
+/* ===================================
+   MUSIC PLAYER
+   =================================== */
+
+#music-player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: rgba(10, 10, 30, 0.95);
+  border-top: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  z-index: 200;
+}
+
+#music-toggle {
+  background: none;
+  border: 1px solid #444;
+  color: #7fdbca;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+#music-toggle:hover {
+  border-color: #7fdbca;
+  background: rgba(127, 219, 202, 0.1);
+}
+
+#music-toggle.playing {
+  background: rgba(127, 219, 202, 0.2);
+  border-color: #7fdbca;
+}
+
+#music-title {
+  color: #aaa;
+  font-size: 0.8em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+#music-volume {
+  width: 80px;
+  flex-shrink: 0;
+  accent-color: #7fdbca;
+  cursor: pointer;
+}
