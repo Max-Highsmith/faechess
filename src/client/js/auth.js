@@ -12,6 +12,9 @@ export async function initAuth() {
   if (session) {
     currentUser = session.user;
     await onAuthStateChange(true);
+    // Returning user: skip welcome view, go straight to landing page
+    const { showLandingPage } = await import('./navigation.js');
+    showLandingPage();
   } else {
     await onAuthStateChange(false);
   }
@@ -22,7 +25,6 @@ export async function initAuth() {
     currentUser = session?.user || null;
     await onAuthStateChange(!!session);
 
-    // Handle different events
     if (event === 'SIGNED_IN') {
       console.log('User signed in');
     } else if (event === 'SIGNED_OUT') {
@@ -42,7 +44,7 @@ function setupAuthHandlers() {
   const logoutBtn = document.getElementById('logout-btn');
   const subscribeBtn = document.getElementById('subscribe-btn');
   const authForm = document.getElementById('auth-form');
-  const authTabs = document.querySelectorAll('.tab');
+  const authTabs = document.querySelectorAll('#auth-tabs .tab');
   const closeAuthBtn = document.getElementById('close-auth');
 
   if (loginBtn) {
@@ -73,6 +75,30 @@ function setupAuthHandlers() {
   authTabs.forEach(tab => {
     tab.addEventListener('click', () => switchAuthTab(tab.dataset.tab));
   });
+
+  // Welcome view handlers
+  const welcomeGoogleBtn = document.getElementById('welcome-google-btn');
+  if (welcomeGoogleBtn) {
+    welcomeGoogleBtn.addEventListener('click', handleGoogleLogin);
+  }
+
+  const welcomeForm = document.getElementById('welcome-auth-form');
+  if (welcomeForm) {
+    welcomeForm.addEventListener('submit', handleWelcomeAuthSubmit);
+  }
+
+  const welcomeGuestBtn = document.getElementById('welcome-guest-btn');
+  if (welcomeGuestBtn) {
+    welcomeGuestBtn.addEventListener('click', async () => {
+      const { showLandingPage } = await import('./navigation.js');
+      showLandingPage();
+    });
+  }
+
+  const welcomeTabs = document.querySelectorAll('#welcome-auth-tabs .tab');
+  welcomeTabs.forEach(tab => {
+    tab.addEventListener('click', () => switchWelcomeTab(tab.dataset.tab));
+  });
 }
 
 /**
@@ -102,7 +128,7 @@ function closeAuthModal() {
  * Switch between login and signup tabs
  */
 function switchAuthTab(mode) {
-  const tabs = document.querySelectorAll('.tab');
+  const tabs = document.querySelectorAll('#auth-tabs .tab');
   const submitBtn = document.getElementById('auth-submit');
   const title = document.getElementById('auth-title');
 
@@ -139,6 +165,95 @@ async function handleGoogleLogin() {
     showError('Failed to sign in with Google');
     console.error('Google auth error:', error);
   }
+}
+
+/**
+ * Switch between login and signup tabs on the welcome view
+ */
+function switchWelcomeTab(mode) {
+  const tabs = document.querySelectorAll('#welcome-auth-tabs .tab');
+  const submitBtn = document.getElementById('welcome-auth-submit');
+
+  tabs.forEach(tab => {
+    if (tab.dataset.tab === mode) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  if (submitBtn) {
+    submitBtn.textContent = mode === 'login' ? 'Login' : 'Sign Up';
+  }
+
+  hideWelcomeMessages();
+}
+
+/**
+ * Handle welcome view auth form submission
+ */
+async function handleWelcomeAuthSubmit(e) {
+  e.preventDefault();
+
+  const email = document.getElementById('welcome-auth-email').value;
+  const password = document.getElementById('welcome-auth-password').value;
+  const mode = document.querySelector('#welcome-auth-tabs .tab.active').dataset.tab;
+
+  try {
+    let result;
+
+    if (mode === 'login') {
+      result = await supabase.auth.signInWithPassword({ email, password });
+    } else {
+      result = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin }
+      });
+    }
+
+    if (result.error) {
+      showWelcomeError(result.error.message);
+    } else {
+      if (mode === 'signup' && result.data.user && !result.data.session) {
+        showWelcomeSuccess('Check your email to confirm your account.');
+      } else {
+        // Successful login — navigate to landing page
+        const { showLandingPage } = await import('./navigation.js');
+        showLandingPage();
+      }
+    }
+  } catch (error) {
+    showWelcomeError('An unexpected error occurred');
+    console.error('Welcome auth error:', error);
+  }
+}
+
+function showWelcomeError(message) {
+  const errorEl = document.getElementById('welcome-auth-error');
+  const successEl = document.getElementById('welcome-auth-success');
+  if (successEl) successEl.classList.add('hidden');
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+  }
+}
+
+function showWelcomeSuccess(message) {
+  const errorEl = document.getElementById('welcome-auth-error');
+  const successEl = document.getElementById('welcome-auth-success');
+  if (errorEl) errorEl.classList.add('hidden');
+  if (successEl) {
+    successEl.textContent = message;
+    successEl.classList.remove('hidden');
+  }
+}
+
+function hideWelcomeMessages() {
+  const errorEl = document.getElementById('welcome-auth-error');
+  const successEl = document.getElementById('welcome-auth-success');
+  if (errorEl) errorEl.classList.add('hidden');
+  if (successEl) successEl.classList.add('hidden');
 }
 
 /**
@@ -257,6 +372,13 @@ async function onAuthStateChange(isLoggedIn) {
     // Load user's puzzle progress
     if (window.loadUserProgress) {
       window.loadUserProgress();
+    }
+
+    // If welcome view is showing, navigate to landing page
+    const welcomeView = document.getElementById('welcome-view');
+    if (welcomeView && !welcomeView.classList.contains('hidden')) {
+      const { showLandingPage } = await import('./navigation.js');
+      showLandingPage();
     }
   }
 

@@ -2,7 +2,7 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup'];
+const allViews = ['welcome-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup'];
 
 function hideAll() {
   for (const id of allViews) {
