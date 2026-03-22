@@ -736,50 +736,53 @@
 
   // ── Server sync (optional, for OpenClaw) ───────────────────────
 
-  let serverUrl = 'http://localhost:3000';
-  let serverConnected = false;
-  let lastServerVersion = -1;
   const serverInfoEl = document.getElementById('server-info');
   const btnSync = document.getElementById('btn-sync');
 
-  function checkServer() {
-    fetch(serverUrl + '/health', { mode: 'cors' })
-      .then(r => r.json())
-      .then(data => {
-        if (!serverConnected) {
-          serverConnected = true;
-          serverInfoEl.style.color = '#7fdbca';
-          serverInfoEl.textContent = 'Connected to ' + serverUrl;
-          btnSync.style.display = 'inline-block';
-        }
-        if (data.version !== undefined && data.version !== lastServerVersion) {
-          lastServerVersion = data.version;
-        }
-      })
-      .catch(() => {
-        if (serverConnected) {
-          serverConnected = false;
-          serverInfoEl.style.color = '#666';
-          serverInfoEl.textContent = 'Not connected. Run: node server.js';
-          btnSync.style.display = 'none';
-        }
-      });
+  if (serverInfoEl && btnSync) {
+    let serverUrl = 'http://localhost:3000';
+    let serverConnected = false;
+    let lastServerVersion = -1;
+
+    function checkServer() {
+      fetch(serverUrl + '/health', { mode: 'cors' })
+        .then(r => r.json())
+        .then(data => {
+          if (!serverConnected) {
+            serverConnected = true;
+            serverInfoEl.style.color = '#7fdbca';
+            serverInfoEl.textContent = 'Connected to ' + serverUrl;
+            btnSync.style.display = 'inline-block';
+          }
+          if (data.version !== undefined && data.version !== lastServerVersion) {
+            lastServerVersion = data.version;
+          }
+        })
+        .catch(() => {
+          if (serverConnected) {
+            serverConnected = false;
+            serverInfoEl.style.color = '#666';
+            serverInfoEl.textContent = 'Not connected. Run: node server.js';
+            btnSync.style.display = 'none';
+          }
+        });
+    }
+
+    btnSync.addEventListener('click', () => {
+      fetch(serverUrl + '/reset')
+        .then(r => r.json())
+        .then(() => {
+          serverInfoEl.textContent = 'Synced – server reset.';
+          setTimeout(() => {
+            serverInfoEl.textContent = 'Connected to ' + serverUrl;
+          }, 2000);
+        })
+        .catch(() => {});
+    });
+
+    setInterval(checkServer, 5000);
+    checkServer();
   }
-
-  btnSync.addEventListener('click', () => {
-    fetch(serverUrl + '/reset')
-      .then(r => r.json())
-      .then(() => {
-        serverInfoEl.textContent = 'Synced – server reset.';
-        setTimeout(() => {
-          serverInfoEl.textContent = 'Connected to ' + serverUrl;
-        }, 2000);
-      })
-      .catch(() => {});
-  });
-
-  setInterval(checkServer, 5000);
-  checkServer();
 
   // ── Puzzle controls ──────────────────────────────────────────
 
