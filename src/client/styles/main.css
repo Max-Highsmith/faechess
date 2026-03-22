@@ -99,6 +99,26 @@ canvas { display: block; }
 }
 #btn-hint:hover, #btn-exit-puzzle:hover { background: #1a1a5e; }
 
+/* Tutorial section */
+#tutorial-section {
+  margin-top: 12px; border-top: 1px solid #333; padding-top: 8px;
+}
+#tutorial-section h3 { font-size: 0.85em; color: #888; margin-bottom: 6px; }
+#tutorial-description {
+  font-size: 0.8em; color: #ccc; margin-bottom: 10px;
+  line-height: 1.4; min-height: 18px;
+}
+.tutorial-card {
+  background: #16213e; border: 1px solid #333; border-radius: 6px;
+  padding: 8px 10px; margin-bottom: 6px; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex; align-items: center; gap: 10px;
+}
+.tutorial-card:hover { border-color: #7fdbca; background: #1a1a5e; }
+.tutorial-card.active { border-color: #f7c948; background: #1e2a4a; }
+.tutorial-card .tutorial-icon { font-size: 1.4em; width: 28px; text-align: center; }
+.tutorial-card .tutorial-name { font-size: 0.85em; font-weight: bold; color: #ddd; }
+
 /* User section */
 #user-section {
   margin-top: 12px; border-top: 1px solid #333; padding-top: 8px;
@@ -351,12 +371,13 @@ canvas { display: block; }
 #mode-select .back-btn { position: absolute; top: 20px; left: 20px; }
 
 /* Mode visibility in game view */
-.mode-game, .mode-ai, .mode-puzzles { display: none; }
+.mode-game, .mode-ai, .mode-puzzles, .mode-tutorial { display: none; }
 #game-view.mode-pvp .mode-game { display: block; }
 #game-view.mode-pvp .mode-ai { display: none; }
 #game-view.mode-pvai .mode-game { display: block; }
 #game-view.mode-pvai .mode-ai { display: block; }
 #game-view.mode-puzzles .mode-puzzles { display: block; }
+#game-view.mode-tutorial .mode-tutorial { display: block; }
 
 /* ===================================
    ANALYZER VIEW

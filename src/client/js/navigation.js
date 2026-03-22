@@ -26,7 +26,7 @@ export function startGame(mode) {
   if (!gameView) return;
 
   // Remove old mode classes
-  gameView.classList.remove('mode-pvp', 'mode-pvai', 'mode-puzzles');
+  gameView.classList.remove('mode-pvp', 'mode-pvai', 'mode-puzzles', 'mode-tutorial');
 
   // Apply new mode class
   gameView.classList.add('mode-' + mode);
@@ -69,7 +69,7 @@ export function initNavigation() {
   }
 
   // Mode cards → start game with mode
-  const modes = ['pvp', 'pvai', 'puzzles'];
+  const modes = ['pvp', 'pvai', 'puzzles', 'tutorial'];
   for (const mode of modes) {
     const btn = document.getElementById('mode-' + mode);
     if (btn) {

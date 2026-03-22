@@ -81,6 +81,12 @@
           <p>Train Your Skills</p>
           <p class="game-desc">Find the best move in one</p>
         </button>
+        <button class="game-card" id="mode-tutorial">
+          <div class="game-icon">📖</div>
+          <h2>Tutorial</h2>
+          <p>Learn the Pieces</p>
+          <p class="game-desc">See how each piece moves in 3D</p>
+        </button>
       </div>
     </div>
   </div>
@@ -107,7 +113,7 @@
       </div>
     </div>
 
-    <div class="mode-game mode-puzzles">
+    <div class="mode-game mode-puzzles mode-tutorial">
       <div id="turn">White to move</div>
       <div id="status"></div>
     </div>
@@ -170,6 +176,12 @@
         <button id="btn-exit-puzzle">Back to Game</button>
       </div>
       <div id="puzzle-list"></div>
+    </div>
+
+    <div id="tutorial-section" class="mode-tutorial">
+      <h3>Pieces</h3>
+      <div id="tutorial-description"></div>
+      <div id="tutorial-list"></div>
     </div>
 
     <div id="move-log" class="mode-game"></div>

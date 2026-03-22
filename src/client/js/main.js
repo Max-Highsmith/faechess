@@ -42,6 +42,8 @@
   const moveLogEl = document.getElementById('move-log');
 
   function updateUI() {
+    if (tutorialMode) return;
+
     const colorName = game.turn === 'w' ? 'White' : 'Black';
     turnEl.textContent = game.gameOver ? 'Game Over' : `${colorName} to move`;
 
@@ -71,6 +73,10 @@
   // ── Cell click handler ─────────────────────────────────────────
 
   function handleCellClick(x, y, z) {
+    if (tutorialMode) {
+      handleTutorialMove(x, y, z);
+      return;
+    }
     if (puzzleMode) {
       handlePuzzleMove(x, y, z);
       return;
@@ -184,6 +190,12 @@
   const puzzleStatusEl = document.getElementById('puzzle-status');
   const puzzleControlsEl = document.getElementById('puzzle-controls');
   const puzzleListEl = document.getElementById('puzzle-list');
+
+  // ── Tutorial mode ─────────────────────────────────────────────
+  let tutorialMode = false;
+  let tutorialPiecePos = null; // [x,y,z] of placed piece
+  const tutorialDescEl = document.getElementById('tutorial-description');
+  const tutorialListEl = document.getElementById('tutorial-list');
 
   // Restore solved state from localStorage
   try {
@@ -318,6 +330,108 @@
     }
 
     if (piece && piece.color === game.turn) {
+      selectPiece(x, y, z);
+    }
+  }
+
+  // ── Tutorial functions ─────────────────────────────────────────
+
+  function buildTutorialList() {
+    tutorialListEl.innerHTML = '';
+    const all = Tutorials.getAll();
+    for (const lesson of all) {
+      const card = document.createElement('div');
+      card.className = 'tutorial-card';
+      card.dataset.type = lesson.type;
+      card.innerHTML =
+        `<span class="tutorial-icon">${lesson.icon}</span>` +
+        `<span class="tutorial-name">${lesson.name}</span>`;
+      card.addEventListener('click', () => enterTutorialPiece(lesson.type));
+      tutorialListEl.appendChild(card);
+    }
+  }
+
+  function enterTutorialPiece(type) {
+    const lesson = Tutorials.getByType(type);
+    if (!lesson) return;
+
+    tutorialMode = true;
+    selected = null;
+    legalTargets = [];
+
+    // Place a single white piece on an empty board
+    const board = {};
+    const [sx, sy, sz] = lesson.startPos;
+    board[Raumschach.key(sx, sy, sz)] = { type: lesson.type, color: 'w' };
+
+    game.reset();
+    game.board = board;
+    game.turn = 'w';
+    game.history = [];
+    game.captured = { w: [], b: [] };
+    game.gameOver = false;
+    game.result = null;
+
+    tutorialPiecePos = lesson.startPos.slice();
+
+    ViewProxy.clearHighlights();
+    ViewProxy.updatePieces(game.board);
+
+    // Highlight the piece and its moves
+    selectPiece(sx, sy, sz);
+
+    turnEl.textContent = lesson.name;
+    statusEl.textContent = '';
+    tutorialDescEl.textContent = lesson.description;
+
+    // Highlight active card
+    document.querySelectorAll('.tutorial-card').forEach(c => c.classList.remove('active'));
+    const card = tutorialListEl.querySelector(`[data-type="${type}"]`);
+    if (card) card.classList.add('active');
+  }
+
+  function handleTutorialMove(x, y, z) {
+    const k = Raumschach.key(x, y, z);
+    const piece = game.board[k];
+
+    if (selected) {
+      const isTarget = legalTargets.some(([tx,ty,tz]) => tx===x && ty===y && tz===z);
+      if (isTarget) {
+        // Move the piece to the new square
+        const from = selected;
+        const fromKey = Raumschach.key(...from);
+        const movingPiece = game.board[fromKey];
+
+        // Manually move (don't use game.makeMove to avoid turn switching)
+        const newBoard = {};
+        newBoard[k] = { type: movingPiece.type, color: 'w' };
+        game.board = newBoard;
+        game.turn = 'w';
+
+        tutorialPiecePos = [x, y, z];
+
+        ViewProxy.clearHighlights();
+        ViewProxy.updatePieces(game.board);
+
+        // Re-highlight from new position
+        selectPiece(x, y, z);
+        return;
+      }
+
+      // Clicked the already-selected piece
+      if (piece && piece.color === 'w') {
+        selectPiece(x, y, z);
+        return;
+      }
+
+      // Clicked empty space — deselect
+      selected = null;
+      legalTargets = [];
+      ViewProxy.clearHighlights();
+      return;
+    }
+
+    if (piece && piece.color === 'w') {
       selectPiece(x, y, z);
     }
   }
@@ -486,6 +600,21 @@
 
     if (mode === 'puzzles') {
       buildPuzzleList();
+    }
+
+    if (mode === 'tutorial') {
+      tutorialMode = true;
+      buildTutorialList();
+      // Show empty board until a piece is selected
+      game.board = {};
+      ViewProxy.updatePieces(game.board);
+      turnEl.textContent = 'Tutorial';
+      statusEl.textContent = 'Select a piece to see how it moves';
+      statusEl.style.color = '#7fdbca';
+      tutorialDescEl.textContent = '';
+    } else {
+      tutorialMode = false;
+      tutorialPiecePos = null;
     }
 
     puzzleMode = false;

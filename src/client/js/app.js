@@ -7,6 +7,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as GameModule from './game.js';
 import * as AIModule from './ai.js';
 import * as PuzzlesModule from './puzzles.js';
+import * as TutorialModule from './tutorial.js';
 import { initAuth, getCurrentUser, getAuthToken } from './auth.js';
 import { initNavigation } from './navigation.js';
 
@@ -18,6 +19,7 @@ window.OrbitControls = OrbitControls;
 window.Raumschach = GameModule;
 window.ChessAI = AIModule;
 window.Puzzles = PuzzlesModule;
+window.Tutorials = TutorialModule;
 
 // Initialize authentication
 initAuth();
