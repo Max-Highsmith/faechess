@@ -48,17 +48,22 @@ function subscribeToGame(gameId) {
 
   channel
     .on('broadcast', { event: 'move' }, ({ payload }) => {
+      console.log('[MP] Received move broadcast:', payload);
       if (onMoveReceived) onMoveReceived(payload);
     })
     .on('broadcast', { event: 'player_joined' }, ({ payload }) => {
+      console.log('[MP] Received player_joined broadcast:', payload);
       if (activeGame) activeGame.status = 'active';
       if (onGameEvent) onGameEvent('player_joined', payload);
     })
     .on('broadcast', { event: 'resign' }, ({ payload }) => {
+      console.log('[MP] Received resign broadcast:', payload);
       if (activeGame) activeGame.status = 'completed';
       if (onGameEvent) onGameEvent('resign', payload);
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log('[MP] Channel subscription status:', status);
+    });
 }
 
 /**
@@ -116,6 +121,18 @@ export async function joinGame(inviteCode) {
   };
 
   subscribeToGame(data.game_id);
+
+  // Broadcast player_joined from client so the creator's channel picks it up
+  if (data.status === 'active' && channel) {
+    setTimeout(() => {
+      channel.send({
+        type: 'broadcast',
+        event: 'player_joined',
+        payload: { color: data.color }
+      }).then(() => console.log('[MP] Broadcasted player_joined from client'));
+    }, 500); // small delay to ensure channel is subscribed
+  }
+
   return data;
 }
 
@@ -165,7 +182,18 @@ export async function submitMove(from, to) {
     throw new Error(err.error || 'Move rejected');
   }
 
-  return res.json();
+  const data = await res.json();
+
+  // Broadcast the move from the client so the opponent's channel picks it up
+  if (channel) {
+    channel.send({
+      type: 'broadcast',
+      event: 'move',
+      payload: data
+    }).then(() => console.log('[MP] Broadcasted move from client'));
+  }
+
+  return data;
 }
 
 /**
@@ -174,6 +202,7 @@ export async function submitMove(from, to) {
 export async function resignGame() {
   if (!activeGame) return;
 
+  const myColor = activeGame.myColor;
   const headers = await authHeaders();
   const res = await fetch(`/api/games/${activeGame.id}/resign`, {
     method: 'POST',
@@ -185,8 +214,19 @@ export async function resignGame() {
     throw new Error(err.error || 'Failed to resign');
   }
 
+  const data = await res.json();
+
+  // Broadcast resignation from client
+  if (channel) {
+    channel.send({
+      type: 'broadcast',
+      event: 'resign',
+      payload: { color: myColor, result: data.result }
+    }).then(() => console.log('[MP] Broadcasted resign from client'));
+  }
+
   activeGame.status = 'completed';
-  return res.json();
+  return data;
 }
 
 /**
