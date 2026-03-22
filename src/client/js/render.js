@@ -991,11 +991,42 @@ const BoardRenderer = (() => {
 
   function highlightLastMove(from, to) {
     clearLastMove();
-    for (const [x, y, z] of [from, to]) {
-      const geo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.12, CELL_SIZE * 0.95);
+
+    // "From" square — orange border/ring showing where piece left
+    {
+      const [x, y, z] = from;
+      const outerGeo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.13, CELL_SIZE * 0.95);
+      const outerMat = new THREE.MeshPhongMaterial({
+        color: 0xe07030, transparent: true, opacity: 0.45,
+        emissive: 0xe07030, emissiveIntensity: 0.25
+      });
+      const outer = new THREE.Mesh(outerGeo, outerMat);
+      const pos = cellWorldPos(x, y, z);
+      outer.position.copy(pos);
+      outer.userData = { x, y, z, type: 'lastMove' };
+      scene.add(outer);
+      lastMoveMeshes.push(outer);
+
+      // Hollow out the center to create a ring/border effect
+      const innerGeo = new THREE.BoxGeometry(CELL_SIZE * 0.6, 0.14, CELL_SIZE * 0.6);
+      const innerMat = new THREE.MeshPhongMaterial({
+        color: 0xe07030, transparent: true, opacity: 0.15,
+        emissive: 0xe07030, emissiveIntensity: 0.1
+      });
+      const inner = new THREE.Mesh(innerGeo, innerMat);
+      inner.position.copy(pos);
+      inner.userData = { x, y, z, type: 'lastMove' };
+      scene.add(inner);
+      lastMoveMeshes.push(inner);
+    }
+
+    // "To" square — bright yellow glow showing where piece landed
+    {
+      const [x, y, z] = to;
+      const geo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.13, CELL_SIZE * 0.95);
       const mat = new THREE.MeshPhongMaterial({
-        color: 0xccaa44, transparent: true, opacity: 0.35,
-        emissive: 0xccaa44, emissiveIntensity: 0.15
+        color: 0xffdd33, transparent: true, opacity: 0.55,
+        emissive: 0xffdd33, emissiveIntensity: 0.45
       });
       const mesh = new THREE.Mesh(geo, mat);
       const pos = cellWorldPos(x, y, z);

@@ -7,6 +7,7 @@ export {
   key, parseKey,
   initialBoard, inBounds,
   findKing, isInCheck, cloneBoard, applyMove,
+  isPromotionMove,
   legalMoves, hasAnyLegalMove,
   coordToNotation,
   Game

@@ -6,6 +6,7 @@ import {
   initialBoard, key, parseKey, legalMoves, applyMove,
   isInCheck, hasAnyLegalMove, coordToNotation
 } from '../../shared/game-logic.js';
+import { calculateElo } from '../elo.js';
 
 const router = express.Router();
 
@@ -18,9 +19,54 @@ async function fetchPlayerProfiles(playerIds) {
   if (ids.length === 0) return [];
   const { data } = await supabase
     .from('users')
-    .select('id, game_id, avatar_url')
+    .select('id, game_id, avatar_url, elo_rating')
     .in('id', ids);
   return data || [];
+}
+
+/**
+ * Update Elo ratings for both players after a game completes.
+ */
+async function updateEloRatings(gameId, whitePlayerId, blackPlayerId, result) {
+  const { data: players } = await supabase
+    .from('users')
+    .select('id, elo_rating, games_played, wins, losses, draws')
+    .in('id', [whitePlayerId, blackPlayerId]);
+
+  const wp = players?.find(p => p.id === whitePlayerId);
+  const bp = players?.find(p => p.id === blackPlayerId);
+
+  const whiteRating = wp?.elo_rating ?? 1200;
+  const blackRating = bp?.elo_rating ?? 1200;
+  const whiteGames = wp?.games_played ?? 0;
+  const blackGames = bp?.games_played ?? 0;
+
+  const elo = calculateElo(whiteRating, blackRating, result, whiteGames, blackGames);
+
+  const isWhiteWin = result === 'white_wins';
+  const isBlackWin = result === 'black_wins';
+  const isDraw = result === 'draw';
+
+  await supabase.from('users').update({
+    elo_rating: elo.white.newRating,
+    games_played: whiteGames + 1,
+    wins: (wp?.wins ?? 0) + (isWhiteWin ? 1 : 0),
+    losses: (wp?.losses ?? 0) + (isBlackWin ? 1 : 0),
+    draws: (wp?.draws ?? 0) + (isDraw ? 1 : 0)
+  }).eq('id', whitePlayerId);
+
+  await supabase.from('users').update({
+    elo_rating: elo.black.newRating,
+    games_played: blackGames + 1,
+    wins: (bp?.wins ?? 0) + (isBlackWin ? 1 : 0),
+    losses: (bp?.losses ?? 0) + (isWhiteWin ? 1 : 0),
+    draws: (bp?.draws ?? 0) + (isDraw ? 1 : 0)
+  }).eq('id', blackPlayerId);
+
+  return {
+    white: { oldRating: whiteRating, newRating: elo.white.newRating, delta: elo.white.delta },
+    black: { oldRating: blackRating, newRating: elo.black.newRating, delta: elo.black.delta }
+  };
 }
 
 /**
@@ -305,6 +351,16 @@ router.post('/:id/move', requireAuth, async (req, res) => {
 
     if (updateErr) throw updateErr;
 
+    // Update Elo ratings if game is over
+    let elo_changes = null;
+    if (gameOver && game.white_player_id && game.black_player_id) {
+      try {
+        elo_changes = await updateEloRatings(game.id, game.white_player_id, game.black_player_id, result);
+      } catch (eloErr) {
+        console.error('Error updating Elo:', eloErr);
+      }
+    }
+
     // Broadcast move
     const payload = {
       move_number: newMoveCount,
@@ -316,7 +372,8 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       board_state: newBoard,
       current_turn: nextTurn,
       game_over: gameOver,
-      result
+      result,
+      elo_changes
     };
 
     res.json({ success: true, ...payload });
@@ -365,7 +422,17 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
 
     if (updateErr) throw updateErr;
 
-    res.json({ success: true, result });
+    // Update Elo ratings
+    let elo_changes = null;
+    if (game.white_player_id && game.black_player_id) {
+      try {
+        elo_changes = await updateEloRatings(game.id, game.white_player_id, game.black_player_id, result);
+      } catch (eloErr) {
+        console.error('Error updating Elo:', eloErr);
+      }
+    }
+
+    res.json({ success: true, result, elo_changes });
   } catch (error) {
     console.error('Error resigning:', error);
     res.status(500).json({ error: error.message });

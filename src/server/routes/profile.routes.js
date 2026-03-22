@@ -12,13 +12,13 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('game_id, avatar_url, email')
+      .select('game_id, avatar_url, email, elo_rating, games_played, wins, losses, draws')
       .eq('id', req.user.id)
       .single();
 
     if (error) throw error;
 
-    res.json(data || { game_id: null, avatar_url: null, email: req.user.email });
+    res.json(data || { game_id: null, avatar_url: null, email: req.user.email, elo_rating: 1200, games_played: 0, wins: 0, losses: 0, draws: 0 });
   } catch (error) {
     console.error('Error fetching profile:', error);
     res.status(500).json({ error: error.message });
@@ -108,7 +108,7 @@ router.get('/:userId', requireAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, game_id, avatar_url')
+      .select('id, game_id, avatar_url, elo_rating')
       .eq('id', req.params.userId)
       .single();
 
@@ -116,7 +116,7 @@ router.get('/:userId', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ id: data.id, game_id: data.game_id, avatar_url: data.avatar_url });
+    res.json({ id: data.id, game_id: data.game_id, avatar_url: data.avatar_url, elo_rating: data.elo_rating });
   } catch (error) {
     console.error('Error fetching user profile:', error);
     res.status(500).json({ error: error.message });

@@ -68,6 +68,74 @@
     });
   }
 
+  // ── Game Over Modal ───────────────────────────────────────────
+
+  function showGameOverModal(resultText, eloChanges) {
+    const modal = document.getElementById('game-over-modal');
+    const resultEl = document.getElementById('game-over-result');
+    const eloSection = document.getElementById('game-over-elo');
+    const closeBtn = document.getElementById('game-over-close');
+
+    resultEl.textContent = resultText;
+
+    if (eloChanges) {
+      eloSection.classList.remove('hidden');
+      const profiles = Multiplayer.getPlayerProfiles();
+      const ag = Multiplayer.getActiveGame();
+      const profileList = Object.values(profiles);
+
+      import('./auth.js').then(({ getCurrentUser }) => {
+        const myId = getCurrentUser()?.id;
+        const myProfile = profiles[myId];
+        const opProfile = profileList.find(p => p.id !== myId);
+
+        const whiteP = ag?.myColor === 'w' ? myProfile : opProfile;
+        const blackP = ag?.myColor === 'b' ? myProfile : opProfile;
+
+        populateEloPlayer('white', eloChanges.white, whiteP);
+        populateEloPlayer('black', eloChanges.black, blackP);
+      });
+    } else {
+      eloSection.classList.add('hidden');
+    }
+
+    modal.classList.remove('hidden');
+
+    closeBtn.onclick = () => {
+      modal.classList.add('hidden');
+      // Refresh cached profile with new Elo
+      import('./profile.js').then(({ fetchMyProfile }) => {
+        if (fetchMyProfile) fetchMyProfile();
+      });
+    };
+  }
+
+  function populateEloPlayer(color, eloData, profile) {
+    const nameEl = document.getElementById(`go-${color}-name`);
+    const avatarEl = document.getElementById(`go-${color}-avatar`);
+    const oldEl = document.getElementById(`go-${color}-old`);
+    const newEl = document.getElementById(`go-${color}-new`);
+    const deltaEl = document.getElementById(`go-${color}-delta`);
+
+    if (nameEl) nameEl.textContent = profile?.game_id || (color === 'white' ? 'White' : 'Black');
+    if (avatarEl) {
+      if (profile?.avatar_url) {
+        avatarEl.src = profile.avatar_url;
+        avatarEl.classList.remove('hidden');
+      } else {
+        avatarEl.classList.add('hidden');
+      }
+    }
+
+    if (oldEl) oldEl.textContent = eloData.oldRating;
+    if (newEl) newEl.textContent = eloData.newRating;
+    if (deltaEl) {
+      const sign = eloData.delta > 0 ? '+' : '';
+      deltaEl.textContent = sign + eloData.delta;
+      deltaEl.className = 'elo-delta ' + (eloData.delta > 0 ? 'positive' : eloData.delta < 0 ? 'negative' : 'neutral');
+    }
+  }
+
   // ── DOM refs ───────────────────────────────────────────────────
   const turnEl = document.getElementById('turn');
   const statusEl = document.getElementById('status');
@@ -156,7 +224,11 @@
             updateUI();
 
             if (multiplayerEnabled) {
-              Multiplayer.submitMove(from, [x, y, z]).catch(err => {
+              Multiplayer.submitMove(from, [x, y, z]).then(data => {
+                if (data && data.game_over && data.elo_changes) {
+                  showGameOverModal(game.result, data.elo_changes);
+                }
+              }).catch(err => {
                 console.error('Move rejected by server:', err);
                 game.undo();
                 if (moveLogEl.lastChild) moveLogEl.removeChild(moveLogEl.lastChild);
@@ -246,6 +318,10 @@
     }
 
     updateUI();
+
+    if (payload.game_over) {
+      showGameOverModal(game.result, payload.elo_changes);
+    }
   }
 
   function handleGameEvent(type, payload) {
@@ -254,11 +330,13 @@
       if (payload.profile) {
         const opNameEl = document.getElementById('mp-opponent-name');
         const opAvatarEl = document.getElementById('mp-opponent-avatar');
+        const opEloEl = document.getElementById('mp-opponent-elo');
         if (opNameEl) opNameEl.textContent = payload.profile.game_id || 'Anonymous';
         if (opAvatarEl && payload.profile.avatar_url) {
           opAvatarEl.src = payload.profile.avatar_url;
           opAvatarEl.classList.remove('hidden');
         }
+        if (opEloEl) opEloEl.textContent = payload.profile.elo_rating ?? 1200;
       }
     }
     if (type === 'resign') {
@@ -266,18 +344,24 @@
       const winner = payload.color === 'w' ? 'Black' : 'White';
       game.result = `${winner} wins by resignation!`;
       updateUI();
+      showGameOverModal(game.result, payload.elo_changes);
     }
   }
 
   function updateMultiplayerProfiles() {
-    import('./profile.js').then(({ getDisplayName, getAvatarUrl }) => {
+    import('./profile.js').then(({ getDisplayName, getAvatarUrl, getCachedProfile }) => {
       // My profile
       const myNameEl = document.getElementById('mp-my-name');
       const myAvatarEl = document.getElementById('mp-my-avatar');
+      const myEloEl = document.getElementById('mp-my-elo');
       if (myNameEl) myNameEl.textContent = getDisplayName();
       if (myAvatarEl && getAvatarUrl()) {
         myAvatarEl.src = getAvatarUrl();
         myAvatarEl.classList.remove('hidden');
+      }
+      if (myEloEl) {
+        const cached = getCachedProfile();
+        myEloEl.textContent = cached?.elo_rating ?? 1200;
       }
     });
 
@@ -288,6 +372,7 @@
       // Opponent profile
       const opNameEl = document.getElementById('mp-opponent-name');
       const opAvatarEl = document.getElementById('mp-opponent-avatar');
+      const opEloEl = document.getElementById('mp-opponent-elo');
       const opponentEntry = Object.entries(profiles).find(([id]) => id !== currentUserId);
       if (opponentEntry) {
         const [, profile] = opponentEntry;
@@ -296,8 +381,10 @@
           opAvatarEl.src = profile.avatar_url;
           opAvatarEl.classList.remove('hidden');
         }
+        if (opEloEl) opEloEl.textContent = profile.elo_rating ?? 1200;
       } else {
         if (opNameEl) opNameEl.textContent = 'Waiting...';
+        if (opEloEl) opEloEl.textContent = '';
       }
     });
   }
@@ -664,10 +751,11 @@
       const opponentName = ag.myColor === 'w' ? 'Black' : 'White';
       if (!confirm(`You (${myColorName}) resign. ${opponentName} wins. Are you sure?`)) return;
       try {
-        await Multiplayer.resignGame();
+        const resignData = await Multiplayer.resignGame();
         game.gameOver = true;
         game.result = `${opponentName} wins by resignation!`;
         updateUI();
+        showGameOverModal(game.result, resignData?.elo_changes);
       } catch (err) {
         console.error('Resign failed:', err);
       }

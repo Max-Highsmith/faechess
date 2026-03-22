@@ -235,7 +235,17 @@ export function cloneBoard(board) {
   return nb;
 }
 
-export function applyMove(board, from, to) {
+export function isPromotionMove(board, from, to) {
+  const [fx,fy,fz] = from;
+  const [tx,ty,tz] = to;
+  const piece = board[key(fx,fy,fz)];
+  if (!piece || piece.type !== 'P') return false;
+  if (piece.color === 'w' && (ty === 4 || tz === 4)) return true;
+  if (piece.color === 'b' && (ty === 0 || tz === 0)) return true;
+  return false;
+}
+
+export function applyMove(board, from, to, promoteTo) {
   const nb = cloneBoard(board);
   const [fx,fy,fz] = from;
   const [tx,ty,tz] = to;
@@ -249,9 +259,9 @@ export function applyMove(board, from, to) {
   // Pawn promotion: reaches opposite end
   if (piece.type === 'P') {
     if (piece.color === 'w' && (ty === 4 || tz === 4)) {
-      nb[tk].type = 'Q'; // Auto-promote to queen
+      nb[tk].type = promoteTo || 'Q';
     } else if (piece.color === 'b' && (ty === 0 || tz === 0)) {
-      nb[tk].type = 'Q';
+      nb[tk].type = promoteTo || 'Q';
     }
   }
 
@@ -304,7 +314,7 @@ export class Game {
     return legalMoves(this.board, x, y, z);
   }
 
-  makeMove(from, to) {
+  makeMove(from, to, promoteTo) {
     const [fx,fy,fz] = from;
     const piece = this.board[key(fx,fy,fz)];
     if (!piece || piece.color !== this.turn || this.gameOver) return false;
@@ -313,7 +323,7 @@ export class Game {
     const [tx,ty,tz] = to;
     if (!legal.some(([mx,my,mz]) => mx===tx && my===ty && mz===tz)) return false;
 
-    const { board: nb, captured } = applyMove(this.board, from, to);
+    const { board: nb, captured } = applyMove(this.board, from, to, promoteTo);
 
     this.history.push({
       board: this.board,

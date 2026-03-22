@@ -2,7 +2,7 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup'];
+const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view'];
 
 function hideAll() {
   for (const id of allViews) {
@@ -22,6 +22,7 @@ export function showProfileSetup() { showView('profile-setup-view'); }
 export function showModeSelect() { showView('mode-select'); }
 export function showAnalyzer() { showView('analyzer-view'); }
 export function showOnlineSetup() { showView('online-setup'); }
+export function showLeaderboard() { showView('leaderboard-view'); }
 
 export function startGame(mode) {
   const gameView = document.getElementById('game-view');
@@ -175,6 +176,21 @@ export function initNavigation() {
     analyzerBack.addEventListener('click', () => showLandingPage());
   }
 
+  // Leaderboard card
+  const modeLeaderboard = document.getElementById('mode-leaderboard');
+  if (modeLeaderboard) {
+    modeLeaderboard.addEventListener('click', () => {
+      loadLeaderboard();
+      showLeaderboard();
+    });
+  }
+
+  // Leaderboard back button
+  const leaderboardBack = document.getElementById('leaderboard-back');
+  if (leaderboardBack) {
+    leaderboardBack.addEventListener('click', () => showModeSelect());
+  }
+
   // Disabled game cards (5 Board and Torus)
   const play5Board = document.getElementById('play-5-board');
   const playTorus = document.getElementById('play-torus');
@@ -189,4 +205,47 @@ export function initNavigation() {
   });
 
   console.log('✅ Navigation initialized');
+}
+
+async function loadLeaderboard() {
+  const body = document.getElementById('leaderboard-body');
+  const loading = document.getElementById('leaderboard-loading');
+  const empty = document.getElementById('leaderboard-empty');
+  if (!body) return;
+
+  body.innerHTML = '';
+  if (loading) loading.classList.remove('hidden');
+  if (empty) empty.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/leaderboard');
+    const players = await res.json();
+
+    if (loading) loading.classList.add('hidden');
+
+    if (!players.length) {
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+
+    players.forEach((player, i) => {
+      const rank = i + 1;
+      const tr = document.createElement('tr');
+      const rankClass = rank <= 3 ? ` leaderboard-rank-${rank}` : '';
+      const avatarHtml = player.avatar_url
+        ? `<img class="leaderboard-avatar" src="${player.avatar_url}" alt="" />`
+        : '';
+      tr.innerHTML = `
+        <td class="leaderboard-rank${rankClass}">${rank}</td>
+        <td><div class="leaderboard-player">${avatarHtml}<span>${player.game_id || 'Anonymous'}</span></div></td>
+        <td class="leaderboard-rating">${player.elo_rating}</td>
+        <td class="leaderboard-record">${player.wins}/${player.losses}/${player.draws}</td>
+        <td>${player.games_played}</td>
+      `;
+      body.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Error loading leaderboard:', err);
+    if (loading) loading.textContent = 'Failed to load leaderboard';
+  }
 }

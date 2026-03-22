@@ -40,6 +40,10 @@ export function getCachedProfile() {
   return cachedProfile;
 }
 
+export function getEloRating() {
+  return cachedProfile?.elo_rating ?? 1200;
+}
+
 export async function showEditProfile() {
   // Pre-fill fields with current data
   const gameIdInput = document.getElementById('game-id-input');
@@ -119,6 +123,17 @@ export function updateProfileUI() {
   // Game view sidebar
   const userEmail = document.getElementById('user-email');
   if (userEmail) userEmail.textContent = displayName;
+
+  // Landing page Elo
+  const landingElo = document.getElementById('landing-elo');
+  if (landingElo) {
+    const elo = cachedProfile?.elo_rating;
+    if (elo != null && cachedProfile?.games_played > 0) {
+      landingElo.textContent = `Rating: ${elo}`;
+    } else {
+      landingElo.textContent = '';
+    }
+  }
 
   // Multiplayer self
   const mpMyName = document.getElementById('mp-my-name');

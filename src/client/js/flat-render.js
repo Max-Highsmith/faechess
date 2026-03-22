@@ -8,7 +8,8 @@ const FlatRenderer = (() => {
   let selectedCells = [];
   let moveCells = [];
   let checkCell = null;
-  let lastMoveCells = [];
+  let lastMoveFrom = null;
+  let lastMoveTo = null;
   let viewMode = 'xy'; // 'xy', 'xz', 'yz', or 'multi'
 
   // Layout computed dynamically to fit viewport
@@ -132,12 +133,14 @@ const FlatRenderer = (() => {
   }
 
   function highlightLastMove(from, to) {
-    lastMoveCells = [from, to];
+    lastMoveFrom = from;
+    lastMoveTo = to;
     redraw();
   }
 
   function clearLastMove() {
-    lastMoveCells = [];
+    lastMoveFrom = null;
+    lastMoveTo = null;
     redraw();
   }
 
@@ -218,8 +221,17 @@ const FlatRenderer = (() => {
           ctx.fillStyle = LAYER_TINT_RGBA[z];
           ctx.fillRect(px, py, cellPx, cellPx);
 
-          if (lastMoveCells.some(([lx, ly, lz]) => lx === x && ly === y && lz === z)) {
-            ctx.fillStyle = 'rgba(204, 170, 68, 0.35)';
+          if (lastMoveFrom && lastMoveFrom[0] === x && lastMoveFrom[1] === y && lastMoveFrom[2] === z) {
+            // "From" square — orange border showing where piece left
+            ctx.strokeStyle = 'rgba(224, 112, 48, 0.7)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(px + 2, py + 2, cellPx - 4, cellPx - 4);
+            ctx.fillStyle = 'rgba(224, 112, 48, 0.18)';
+            ctx.fillRect(px, py, cellPx, cellPx);
+          }
+          if (lastMoveTo && lastMoveTo[0] === x && lastMoveTo[1] === y && lastMoveTo[2] === z) {
+            // "To" square — bright yellow showing where piece landed
+            ctx.fillStyle = 'rgba(255, 221, 51, 0.5)';
             ctx.fillRect(px, py, cellPx, cellPx);
           }
 

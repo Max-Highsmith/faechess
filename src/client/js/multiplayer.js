@@ -238,7 +238,7 @@ export async function resignGame() {
     channel.send({
       type: 'broadcast',
       event: 'resign',
-      payload: { color: myColor, result: data.result }
+      payload: { color: myColor, result: data.result, elo_changes: data.elo_changes }
     }).then(() => console.log('[MP] Broadcasted resign from client'));
   }
 

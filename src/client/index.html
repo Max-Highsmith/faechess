@@ -97,6 +97,7 @@
           <div id="landing-user-info">
             <img id="landing-avatar" class="user-avatar hidden" alt="Avatar" />
             <span id="landing-user-display"></span>
+            <span id="landing-elo" class="landing-elo"></span>
           </div>
           <div id="landing-user-actions">
             <button id="landing-edit-profile-btn" class="user-btn-small">Edit Profile</button>
@@ -174,6 +175,12 @@
           <p>Play a Friend</p>
           <p class="game-desc">Create a game and share the invite link</p>
         </button>
+        <button class="game-card" id="mode-leaderboard">
+          <div class="game-icon">&#127942;</div>
+          <h2>Leaderboard</h2>
+          <p>Top Players</p>
+          <p class="game-desc">View the highest rated players</p>
+        </button>
       </div>
     </div>
   </div>
@@ -225,6 +232,31 @@
     </div>
   </div>
 
+  <!-- Leaderboard View -->
+  <div id="leaderboard-view" class="hidden">
+    <div class="landing-container">
+      <button id="leaderboard-back" class="back-btn">&larr; Back to Menu</button>
+      <h1 class="landing-title">Leaderboard</h1>
+      <p class="landing-subtitle">Top Players by Rating</p>
+      <div id="leaderboard-table-container">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th>Rating</th>
+              <th>W/L/D</th>
+              <th>Games</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body"></tbody>
+        </table>
+        <p id="leaderboard-empty" class="hidden" style="color: #888; margin-top: 20px;">No rated games yet. Be the first to play online!</p>
+        <p id="leaderboard-loading" style="color: #7fdbca; margin-top: 20px;">Loading...</p>
+      </div>
+    </div>
+  </div>
+
   <!-- 3D Chess Game View (hidden by default) -->
   <div id="game-view" class="hidden">
     <div id="ui">
@@ -254,11 +286,13 @@
           <div id="mp-my-profile" class="mp-profile-row">
             <img id="mp-my-avatar" class="mp-avatar hidden" alt="" />
             <span id="mp-my-name"></span>
+            <span id="mp-my-elo" class="mp-elo"></span>
           </div>
           <span class="mp-vs">vs</span>
           <div id="mp-opponent-profile" class="mp-profile-row">
             <img id="mp-opponent-avatar" class="mp-avatar hidden" alt="" />
             <span id="mp-opponent-name">Waiting...</span>
+            <span id="mp-opponent-elo" class="mp-elo"></span>
           </div>
         </div>
         <div id="mp-opponent-status">
@@ -404,6 +438,40 @@
       </form>
       <p id="auth-error" class="error hidden"></p>
       <p id="auth-success" class="success hidden"></p>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div id="game-over-modal" class="modal hidden">
+    <div class="modal-content game-over-content">
+      <h2 id="game-over-title">Game Over</h2>
+      <p id="game-over-result" class="game-over-result"></p>
+      <div id="game-over-elo" class="game-over-elo hidden">
+        <h3>Rating Changes</h3>
+        <div class="elo-players">
+          <div class="elo-player">
+            <img id="go-white-avatar" class="elo-avatar hidden" alt="" />
+            <span id="go-white-name" class="elo-name">White</span>
+            <div class="elo-change">
+              <span id="go-white-old" class="elo-old"></span>
+              <span class="elo-arrow">&rarr;</span>
+              <span id="go-white-new" class="elo-new"></span>
+              <span id="go-white-delta" class="elo-delta"></span>
+            </div>
+          </div>
+          <div class="elo-player">
+            <img id="go-black-avatar" class="elo-avatar hidden" alt="" />
+            <span id="go-black-name" class="elo-name">Black</span>
+            <div class="elo-change">
+              <span id="go-black-old" class="elo-old"></span>
+              <span class="elo-arrow">&rarr;</span>
+              <span id="go-black-new" class="elo-new"></span>
+              <span id="go-black-delta" class="elo-delta"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button id="game-over-close" class="primary-btn">OK</button>
     </div>
   </div>
 
