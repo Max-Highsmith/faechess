@@ -34,6 +34,14 @@
     clearHighlights() {
       if (activeView === '3d') BoardRenderer.clearHighlights();
       else FlatRenderer.clearHighlights();
+    },
+    highlightLastMove(from, to) {
+      if (activeView === '3d') BoardRenderer.highlightLastMove(from, to);
+      else FlatRenderer.highlightLastMove(from, to);
+    },
+    clearLastMove() {
+      if (activeView === '3d') BoardRenderer.clearLastMove();
+      else FlatRenderer.clearLastMove();
     }
   };
 
@@ -113,6 +121,7 @@
           legalTargets = [];
           ViewProxy.clearHighlights();
           ViewProxy.updatePieces(game.board);
+          ViewProxy.highlightLastMove(from, [x, y, z]);
 
           if (game.isCheck() && !game.gameOver) {
             const kp = findCurrentKing();
@@ -188,6 +197,7 @@
     legalTargets = [];
     ViewProxy.clearHighlights();
     ViewProxy.updatePieces(game.board);
+    ViewProxy.highlightLastMove(from, to);
 
     if (payload.game_over) {
       game.gameOver = true;
@@ -243,6 +253,7 @@
         legalTargets = [];
         ViewProxy.clearHighlights();
         ViewProxy.updatePieces(game.board);
+        ViewProxy.highlightLastMove(move.from, move.to);
 
         if (game.isCheck() && !game.gameOver) {
           const kp = findCurrentKing();
@@ -528,6 +539,7 @@
     selected = null;
     legalTargets = [];
     ViewProxy.clearHighlights();
+    ViewProxy.clearLastMove();
     ViewProxy.updatePieces(game.board);
     moveLogEl.innerHTML = '';
     updateUI();
@@ -547,6 +559,7 @@
       selected = null;
       legalTargets = [];
       ViewProxy.clearHighlights();
+      ViewProxy.clearLastMove();
       ViewProxy.updatePieces(game.board);
       updateUI();
       if (game.isCheck()) {
@@ -679,6 +692,7 @@
     selected = null;
     legalTargets = [];
     ViewProxy.clearHighlights();
+    ViewProxy.clearLastMove();
     ViewProxy.updatePieces(game.board);
     moveLogEl.innerHTML = '';
 

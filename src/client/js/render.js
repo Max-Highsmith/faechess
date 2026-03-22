@@ -12,6 +12,7 @@ const BoardRenderer = (() => {
   let cellMeshes = {};
   let pieceMeshes = {};
   let highlightMeshes = [];
+  let lastMoveMeshes = [];
   let raycaster, mouse;
   let onCellClick = null;
   let hoverKey = null;
@@ -988,6 +989,28 @@ const BoardRenderer = (() => {
     highlightMeshes = [];
   }
 
+  function highlightLastMove(from, to) {
+    clearLastMove();
+    for (const [x, y, z] of [from, to]) {
+      const geo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.12, CELL_SIZE * 0.95);
+      const mat = new THREE.MeshPhongMaterial({
+        color: 0xccaa44, transparent: true, opacity: 0.35,
+        emissive: 0xccaa44, emissiveIntensity: 0.15
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      const pos = cellWorldPos(x, y, z);
+      mesh.position.copy(pos);
+      mesh.userData = { x, y, z, type: 'lastMove' };
+      scene.add(mesh);
+      lastMoveMeshes.push(mesh);
+    }
+  }
+
+  function clearLastMove() {
+    for (const m of lastMoveMeshes) scene.remove(m);
+    lastMoveMeshes = [];
+  }
+
   // ── Show/Hide for view toggle ──────────────────────────────────
 
   function show() {
@@ -1068,6 +1091,7 @@ const BoardRenderer = (() => {
 
   return {
     init, updatePieces, highlightCells, highlightCheck, clearHighlights,
+    highlightLastMove, clearLastMove,
     cellWorldPos, setSkin, setViewMode, show, hide
   };
 })();

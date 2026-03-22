@@ -8,6 +8,7 @@ const FlatRenderer = (() => {
   let selectedCells = [];
   let moveCells = [];
   let checkCell = null;
+  let lastMoveCells = [];
   let viewMode = 'xy'; // 'xy', 'xz', 'yz', or 'multi'
 
   // Layout computed dynamically to fit viewport
@@ -130,6 +131,16 @@ const FlatRenderer = (() => {
     redraw();
   }
 
+  function highlightLastMove(from, to) {
+    lastMoveCells = [from, to];
+    redraw();
+  }
+
+  function clearLastMove() {
+    lastMoveCells = [];
+    redraw();
+  }
+
   function cellWorldPos() { return null; }
 
   function setViewMode(mode) {
@@ -206,6 +217,11 @@ const FlatRenderer = (() => {
           // Layer color tint (always based on z-layer, not display stack)
           ctx.fillStyle = LAYER_TINT_RGBA[z];
           ctx.fillRect(px, py, cellPx, cellPx);
+
+          if (lastMoveCells.some(([lx, ly, lz]) => lx === x && ly === y && lz === z)) {
+            ctx.fillStyle = 'rgba(204, 170, 68, 0.35)';
+            ctx.fillRect(px, py, cellPx, cellPx);
+          }
 
           if (checkCell && checkCell[0] === x && checkCell[1] === y && checkCell[2] === z) {
             ctx.fillStyle = 'rgba(255, 68, 68, 0.5)';
@@ -414,7 +430,7 @@ const FlatRenderer = (() => {
     redraw();
   }
 
-  return { init, updatePieces, highlightCells, highlightCheck, clearHighlights, cellWorldPos, setViewMode, show, hide };
+  return { init, updatePieces, highlightCells, highlightCheck, clearHighlights, highlightLastMove, clearLastMove, cellWorldPos, setViewMode, show, hide };
 })();
 
 
