@@ -81,26 +81,37 @@ router.post('/', requireAuth, async (req, res) => {
 
 /**
  * GET /api/games/join/:inviteCode
- * Join a waiting game via invite code.
+ * Join a waiting game via invite code, or reconnect to an active game.
  */
 router.get('/join/:inviteCode', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // Look up the game by invite code (any non-completed status)
     const { data: game, error: fetchErr } = await supabase
       .from('games')
       .select('*')
       .eq('invite_code', req.params.inviteCode)
-      .eq('status', 'waiting')
+      .in('status', ['waiting', 'active'])
       .single();
 
     if (fetchErr || !game) {
-      return res.status(404).json({ error: 'Game not found or already started' });
+      return res.status(404).json({ error: 'Game not found or already completed' });
     }
 
-    // Can't join your own game
+    // If the player is already in this game, let them reconnect
     if (game.white_player_id === userId || game.black_player_id === userId) {
-      return res.status(400).json({ error: 'You are already in this game' });
+      const myColor = game.white_player_id === userId ? 'w' : 'b';
+      return res.json({
+        game_id: game.id,
+        color: myColor,
+        status: game.status
+      });
+    }
+
+    // Game is already full (active with both players)
+    if (game.status === 'active') {
+      return res.status(400).json({ error: 'Game already has two players' });
     }
 
     // Fill the empty slot

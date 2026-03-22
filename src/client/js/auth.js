@@ -380,6 +380,11 @@ async function onAuthStateChange(isLoggedIn) {
       const { showLandingPage } = await import('./navigation.js');
       showLandingPage();
     }
+
+    // Try to join a pending invite game (from invite link opened before auth was ready)
+    if (typeof window._attemptPendingJoin === 'function') {
+      window._attemptPendingJoin();
+    }
   }
 
   // Sync landing page auth UI

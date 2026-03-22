@@ -29,6 +29,9 @@ initAuth();
 // Initialize navigation
 initNavigation();
 
+// Initialize music player
+initMusicPlayer();
+
 // Set up online game UI handlers
 setupOnlineHandlers();
 
@@ -55,6 +58,34 @@ Promise.all([
 }).catch(error => {
   console.error('❌ Error loading modules:', error);
 });
+
+/**
+ * Music player toggle & volume
+ */
+function initMusicPlayer() {
+  const audio = document.getElementById('music-audio');
+  const btn = document.getElementById('music-toggle');
+  const vol = document.getElementById('music-volume');
+  if (!audio || !btn || !vol) return;
+
+  audio.volume = parseFloat(vol.value);
+
+  btn.addEventListener('click', () => {
+    if (audio.paused) {
+      audio.play();
+      btn.classList.add('playing');
+      btn.title = 'Pause music';
+    } else {
+      audio.pause();
+      btn.classList.remove('playing');
+      btn.title = 'Play music';
+    }
+  });
+
+  vol.addEventListener('input', () => {
+    audio.volume = parseFloat(vol.value);
+  });
+}
 
 /**
  * Set up create/join/copy handlers on the online-setup view
@@ -144,28 +175,31 @@ function setupOnlineHandlers() {
 }
 
 /**
- * Check if URL is an invite link (/game/:code) and auto-join
+ * Check if URL is an invite link (/game/:code) and auto-join.
+ * Saves the invite code so it survives the auth flow.
  */
 function checkInviteUrl() {
   const pathMatch = window.location.pathname.match(/^\/game\/([A-Za-z0-9_-]+)$/);
-  if (!pathMatch) return;
-
-  const inviteCode = pathMatch[1];
-
-  // Clear the URL to prevent re-joining on refresh
-  window.history.replaceState({}, '', '/');
-
-  if (!isAuthenticated()) {
-    // Show online setup with auth required message
-    showOnlineSetup();
-    const authReq = document.getElementById('online-auth-required');
-    const panels = document.getElementById('online-panels');
-    if (authReq) authReq.classList.remove('hidden');
-    if (panels) panels.style.display = 'none';
-    return;
+  if (pathMatch) {
+    sessionStorage.setItem('pending-invite', pathMatch[1]);
+    window.history.replaceState({}, '', '/');
   }
 
-  // Auto-join
+  attemptPendingJoin();
+}
+
+/**
+ * Try to join a game from a saved invite code.
+ * Called after URL check and again after auth completes.
+ */
+function attemptPendingJoin() {
+  const inviteCode = sessionStorage.getItem('pending-invite');
+  if (!inviteCode) return;
+
+  if (!isAuthenticated()) return; // will retry after sign-in
+
+  sessionStorage.removeItem('pending-invite');
+
   MultiplayerModule.joinGame(inviteCode)
     .then(() => startOnlineGame())
     .catch(err => {
@@ -173,6 +207,9 @@ function checkInviteUrl() {
       showOnlineSetup();
     });
 }
+
+// Expose for auth module to call after sign-in
+window._attemptPendingJoin = attemptPendingJoin;
 
 // Export for other modules
 export { getCurrentUser, getAuthToken };
