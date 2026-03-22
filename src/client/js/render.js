@@ -797,16 +797,6 @@ const BoardRenderer = (() => {
 
       for (let y = 0; y < BOARD_SIZE; y++) {
         for (let x = 0; x < BOARD_SIZE; x++) {
-          const isLight = (x + y + stackIdx) % 2 === 0;
-          const baseColor = new THREE.Color(isLight ? 0xd4c89a : 0x6b5b3a);
-          // Always tint by the actual z-layer, not the display stack
-          const tintedColor = baseColor.lerp(LAYER_TINTS[logZ], LAYER_TINT_STRENGTH);
-          const geo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.1, CELL_SIZE * 0.95);
-          const mat = new THREE.MeshPhongMaterial({
-            color: tintedColor, transparent: true, opacity: 0.85
-          });
-          const mesh = new THREE.Mesh(geo, mat);
-
           // Map logical coordinates based on view mode
           let logX, logY, logZ;
           switch (viewMode) {
@@ -820,6 +810,16 @@ const BoardRenderer = (() => {
               logX = stackIdx; logY = x; logZ = y;
               break;
           }
+
+          const isLight = (logX + logY + logZ) % 2 === 0;
+          const baseColor = new THREE.Color(isLight ? 0xd4c89a : 0x6b5b3a);
+          // Always tint by the actual z-layer, not the display stack
+          const tintedColor = baseColor.lerp(LAYER_TINTS[logZ], LAYER_TINT_STRENGTH);
+          const geo = new THREE.BoxGeometry(CELL_SIZE * 0.95, 0.1, CELL_SIZE * 0.95);
+          const mat = new THREE.MeshPhongMaterial({
+            color: tintedColor, transparent: true, opacity: 0.85
+          });
+          const mesh = new THREE.Mesh(geo, mat);
 
           const pos = cellWorldPos(logX, logY, logZ);
           mesh.position.copy(pos);
