@@ -136,7 +136,11 @@ async function handleAuthSubmit(e) {
     if (mode === 'login') {
       result = await supabase.auth.signInWithPassword({ email, password });
     } else {
-      result = await supabase.auth.signUp({ email, password });
+      result = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin }
+      });
     }
 
     if (result.error) {
