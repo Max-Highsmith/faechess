@@ -87,6 +87,59 @@
           <p>Learn the Pieces</p>
           <p class="game-desc">See how each piece moves in 3D</p>
         </button>
+        <button class="game-card" id="mode-online">
+          <div class="game-icon">🌐</div>
+          <h2>Online</h2>
+          <p>Play a Friend</p>
+          <p class="game-desc">Create a game and share the invite link</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Online Game Setup (hidden by default) -->
+  <div id="online-setup" class="hidden">
+    <div class="landing-container">
+      <button id="online-back" class="back-btn">← Back to Menu</button>
+      <h1 class="landing-title">Online Game</h1>
+      <p class="landing-subtitle">Play against a friend over the internet</p>
+
+      <div id="online-auth-required" class="hidden" style="text-align:center; margin:2rem 0;">
+        <p style="color:#ff6b6b;">You need to be logged in to play online.</p>
+        <button id="online-login-btn" class="user-btn" style="margin-top:0.5rem;">Login / Sign Up</button>
+      </div>
+
+      <div id="online-panels">
+        <!-- Create Game -->
+        <div id="create-game-panel" class="online-panel">
+          <h2>Create a New Game</h2>
+          <div class="color-picker">
+            <button class="color-btn selected" data-color="white">Play as White</button>
+            <button class="color-btn" data-color="black">Play as Black</button>
+            <button class="color-btn" data-color="random">Random</button>
+          </div>
+          <button id="btn-create-game" class="primary-btn">Create Game</button>
+        </div>
+
+        <!-- Waiting for Opponent -->
+        <div id="waiting-panel" class="online-panel hidden">
+          <h2>Waiting for Opponent</h2>
+          <p>Share this link with your opponent:</p>
+          <div class="invite-link-row">
+            <input id="invite-link-input" readonly />
+            <button id="btn-copy-link">Copy</button>
+          </div>
+          <p id="waiting-status" style="color:#7fdbca; margin-top:1rem;">Waiting for opponent to join...</p>
+        </div>
+
+        <!-- Join Game -->
+        <div id="join-game-panel" class="online-panel">
+          <h2>Or Join a Game</h2>
+          <div class="invite-link-row">
+            <input id="invite-code-input" placeholder="Paste invite code or link" />
+            <button id="btn-join-game">Join</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -113,7 +166,17 @@
       </div>
     </div>
 
-    <div class="mode-game mode-puzzles mode-tutorial">
+    <div class="mode-online">
+      <div id="mp-info">
+        <div id="mp-my-color">You play: <span id="mp-color-badge">—</span></div>
+        <div id="mp-opponent-status">
+          <span class="status-dot online"></span>
+          <span>Opponent connected</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-game mode-puzzles mode-tutorial mode-online">
       <div id="turn">White to move</div>
       <div id="status"></div>
     </div>

@@ -2,7 +2,7 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['landing-page', 'mode-select', 'game-view', 'analyzer-view'];
+const allViews = ['landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup'];
 
 function hideAll() {
   for (const id of allViews) {
@@ -20,13 +20,14 @@ function showView(id) {
 export function showLandingPage() { showView('landing-page'); }
 export function showModeSelect() { showView('mode-select'); }
 export function showAnalyzer() { showView('analyzer-view'); }
+export function showOnlineSetup() { showView('online-setup'); }
 
 export function startGame(mode) {
   const gameView = document.getElementById('game-view');
   if (!gameView) return;
 
   // Remove old mode classes
-  gameView.classList.remove('mode-pvp', 'mode-pvai', 'mode-puzzles', 'mode-tutorial');
+  gameView.classList.remove('mode-pvp', 'mode-pvai', 'mode-puzzles', 'mode-tutorial', 'mode-online');
 
   // Apply new mode class
   gameView.classList.add('mode-' + mode);
@@ -37,6 +38,13 @@ export function startGame(mode) {
   if (typeof window.setGameMode === 'function') {
     window.setGameMode(mode);
   }
+}
+
+/**
+ * Start an online game — transitions from online-setup to game-view
+ */
+export function startOnlineGame() {
+  startGame('online');
 }
 
 /**
@@ -77,10 +85,49 @@ export function initNavigation() {
     }
   }
 
+  // Online mode card → online setup (requires auth)
+  const modeOnline = document.getElementById('mode-online');
+  if (modeOnline) {
+    modeOnline.addEventListener('click', () => {
+      import('./auth.js').then(({ isAuthenticated }) => {
+        const authReq = document.getElementById('online-auth-required');
+        const panels = document.getElementById('online-panels');
+        if (isAuthenticated()) {
+          if (authReq) authReq.classList.add('hidden');
+          if (panels) panels.style.display = '';
+        } else {
+          if (authReq) authReq.classList.remove('hidden');
+          if (panels) panels.style.display = 'none';
+        }
+        showOnlineSetup();
+      });
+    });
+  }
+
+  // Online setup back → mode select
+  const onlineBack = document.getElementById('online-back');
+  if (onlineBack) {
+    onlineBack.addEventListener('click', () => showModeSelect());
+  }
+
+  // Online auth login button
+  const onlineLoginBtn = document.getElementById('online-login-btn');
+  if (onlineLoginBtn) {
+    onlineLoginBtn.addEventListener('click', () => {
+      import('./auth.js').then(({ openAuthModal }) => {
+        if (typeof openAuthModal === 'function') openAuthModal('login');
+      });
+    });
+  }
+
   // Game view back → mode select (not landing)
   const backToMenu = document.getElementById('back-to-menu');
   if (backToMenu) {
-    backToMenu.addEventListener('click', () => showModeSelect());
+    backToMenu.addEventListener('click', () => {
+      // Cleanup multiplayer if active
+      if (window.Multiplayer) window.Multiplayer.cleanup();
+      showModeSelect();
+    });
   }
 
   // Landing page auth buttons

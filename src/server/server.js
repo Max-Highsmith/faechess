@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import puzzleRoutes from './routes/puzzle.routes.js';
 import subscriptionRoutes from './routes/subscription.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import gameRoutes from './routes/game.routes.js';
 
 // Import scheduler
 import { startWeeklyPuzzleScheduler } from './puzzle-scheduler.js';
@@ -33,6 +34,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/puzzles', puzzleRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/games', gameRoutes);
 
 // Serve static files from public directory (only in production)
 if (process.env.NODE_ENV === 'production') {

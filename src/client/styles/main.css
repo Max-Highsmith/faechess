@@ -371,13 +371,15 @@ canvas { display: block; }
 #mode-select .back-btn { position: absolute; top: 20px; left: 20px; }
 
 /* Mode visibility in game view */
-.mode-game, .mode-ai, .mode-puzzles, .mode-tutorial { display: none; }
+.mode-game, .mode-ai, .mode-puzzles, .mode-tutorial, .mode-online { display: none; }
 #game-view.mode-pvp .mode-game { display: block; }
 #game-view.mode-pvp .mode-ai { display: none; }
 #game-view.mode-pvai .mode-game { display: block; }
 #game-view.mode-pvai .mode-ai { display: block; }
 #game-view.mode-puzzles .mode-puzzles { display: block; }
 #game-view.mode-tutorial .mode-tutorial { display: block; }
+#game-view.mode-online .mode-online { display: block; }
+#game-view.mode-online .mode-game { display: block; }
 
 /* ===================================
    ANALYZER VIEW
@@ -459,3 +461,54 @@ canvas { display: block; }
 .az-rank-num { color: #666; width: 22px; text-align: right; }
 .az-rank-notation { color: #ddd; flex: 1; }
 .az-rank-score { color: #aaa; width: 60px; text-align: right; font-family: monospace; }
+
+/* ===================================
+   ONLINE SETUP VIEW
+   =================================== */
+
+#online-setup .landing-container { position: relative; }
+#online-setup .back-btn { position: absolute; top: 20px; left: 20px; }
+
+.online-panel {
+  background: rgba(22,33,62,0.7); border: 1px solid #333; border-radius: 8px;
+  padding: 1.5rem; margin-bottom: 1rem; max-width: 460px; margin-left: auto; margin-right: auto;
+}
+.online-panel h2 { font-size: 1.1em; color: #7fdbca; margin-bottom: 0.75rem; }
+
+.color-picker { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.color-btn {
+  flex: 1; padding: 0.5rem; background: #16213e; color: #ccc; border: 1px solid #444;
+  border-radius: 4px; cursor: pointer; font-size: 0.85em; transition: all 0.15s;
+}
+.color-btn:hover { background: #1a1a5e; }
+.color-btn.selected { background: #1a3e5e; border-color: #7fdbca; color: #7fdbca; }
+
+.primary-btn {
+  width: 100%; padding: 0.7rem; background: #1a5e3e; color: #7fdbca;
+  border: 1px solid #7fdbca; border-radius: 4px; cursor: pointer;
+  font-size: 1em; transition: background 0.15s;
+}
+.primary-btn:hover { background: #1a7e4e; }
+
+.invite-link-row {
+  display: flex; gap: 0.5rem;
+}
+.invite-link-row input {
+  flex: 1; padding: 0.5rem; background: #0a0a1e; color: #eee;
+  border: 1px solid #444; border-radius: 4px; font-size: 0.9em;
+}
+.invite-link-row button {
+  padding: 0.5rem 1rem; background: #16213e; color: #eee;
+  border: 1px solid #444; border-radius: 4px; cursor: pointer; font-size: 0.85em;
+}
+.invite-link-row button:hover { background: #1a1a5e; }
+
+/* Multiplayer info in game sidebar */
+#mp-info { margin-bottom: 12px; font-size: 0.85em; }
+#mp-color-badge { font-weight: bold; }
+#mp-opponent-status { margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.status-dot.online { background: #44ff88; }
+.status-dot.offline { background: #666; }

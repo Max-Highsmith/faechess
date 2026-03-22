@@ -11,6 +11,9 @@
   let aiEnabled = false;
   let ai = new ChessAI.AI('b', 2);
 
+  // ── Multiplayer state ─────────────────────────────────────────
+  let multiplayerEnabled = false;
+
   // ── View state ─────────────────────────────────────────────────
   let activeView = '3d';
   let flatInitialized = false;
@@ -45,7 +48,14 @@
     if (tutorialMode) return;
 
     const colorName = game.turn === 'w' ? 'White' : 'Black';
-    turnEl.textContent = game.gameOver ? 'Game Over' : `${colorName} to move`;
+    if (game.gameOver) {
+      turnEl.textContent = 'Game Over';
+    } else if (multiplayerEnabled) {
+      const isYourTurn = Multiplayer.isMyTurn(game.turn);
+      turnEl.textContent = isYourTurn ? 'Your turn' : "Opponent's turn";
+    } else {
+      turnEl.textContent = `${colorName} to move`;
+    }
 
     if (game.gameOver) {
       statusEl.textContent = game.result;
@@ -83,6 +93,7 @@
     }
     if (game.gameOver) return;
     if (aiEnabled && game.turn === ai.color) return; // AI's turn
+    if (multiplayerEnabled && !Multiplayer.isMyTurn(game.turn)) return; // Opponent's turn
 
     const k = Raumschach.key(x, y, z);
     const piece = game.board[k];
@@ -109,7 +120,22 @@
           }
 
           updateUI();
-          tryAIMove();
+
+          if (multiplayerEnabled) {
+            // Send move to server (optimistic update — rollback on rejection)
+            Multiplayer.submitMove(from, [x, y, z]).catch(err => {
+              console.error('Move rejected by server:', err);
+              game.undo();
+              if (moveLogEl.lastChild) moveLogEl.removeChild(moveLogEl.lastChild);
+              ViewProxy.clearHighlights();
+              ViewProxy.updatePieces(game.board);
+              updateUI();
+              statusEl.textContent = 'Move rejected — try again';
+              statusEl.style.color = '#ff6b6b';
+            });
+          } else {
+            tryAIMove();
+          }
           return;
         }
       }
@@ -147,6 +173,52 @@
     }
     return null;
   }
+
+  // ── Multiplayer: receive opponent's move ───────────────────────
+
+  function applyRemoteMove(payload) {
+    const from = payload.from;
+    const to = payload.to;
+    const moveNum = Math.floor(game.history.length / 2) + 1;
+
+    game.makeMove(from, to);
+
+    addMoveToLog(payload.notation, moveNum);
+    selected = null;
+    legalTargets = [];
+    ViewProxy.clearHighlights();
+    ViewProxy.updatePieces(game.board);
+
+    if (payload.game_over) {
+      game.gameOver = true;
+      const resultMap = {
+        'white_wins': 'White wins by checkmate!',
+        'black_wins': 'Black wins by checkmate!',
+        'draw': 'Stalemate — draw!'
+      };
+      game.result = resultMap[payload.result] || payload.result;
+    }
+
+    if (game.isCheck() && !game.gameOver) {
+      const kp = findCurrentKing();
+      if (kp) ViewProxy.highlightCheck(...kp);
+    }
+
+    updateUI();
+  }
+
+  function handleGameEvent(type, payload) {
+    if (type === 'resign') {
+      game.gameOver = true;
+      const winner = payload.color === 'w' ? 'Black' : 'White';
+      game.result = `${winner} wins by resignation!`;
+      updateUI();
+    }
+  }
+
+  // Expose for multiplayer module callbacks
+  window.applyRemoteMove = applyRemoteMove;
+  window.handleGameEvent = handleGameEvent;
 
   // ── AI ─────────────────────────────────────────────────────────
 
@@ -462,6 +534,7 @@
   });
 
   document.getElementById('btn-undo').addEventListener('click', () => {
+    if (multiplayerEnabled) return; // No undo in online games
     const undoCount = aiEnabled ? 2 : 1;
     let undone = 0;
     for (let i = 0; i < undoCount; i++) {
@@ -485,8 +558,26 @@
 
   // ── Surrender ────────────────────────────────────────────────
 
-  document.getElementById('btn-surrender').addEventListener('click', () => {
+  document.getElementById('btn-surrender').addEventListener('click', async () => {
     if (puzzleMode || game.gameOver) return;
+
+    if (multiplayerEnabled) {
+      const ag = Multiplayer.getActiveGame();
+      if (!ag) return;
+      const myColorName = ag.myColor === 'w' ? 'White' : 'Black';
+      const opponentName = ag.myColor === 'w' ? 'Black' : 'White';
+      if (!confirm(`You (${myColorName}) resign. ${opponentName} wins. Are you sure?`)) return;
+      try {
+        await Multiplayer.resignGame();
+        game.gameOver = true;
+        game.result = `${opponentName} wins by resignation!`;
+        updateUI();
+      } catch (err) {
+        console.error('Resign failed:', err);
+      }
+      return;
+    }
+
     const loser = game.turn === 'w' ? 'White' : 'Black';
     const winner = game.turn === 'w' ? 'Black' : 'White';
     if (!confirm(`${loser} surrenders. ${winner} wins. Are you sure?`)) return;
@@ -591,11 +682,25 @@
     ViewProxy.updatePieces(game.board);
     moveLogEl.innerHTML = '';
 
+    aiEnabled = false;
+    multiplayerEnabled = false;
+
     if (mode === 'pvai') {
       aiEnabled = true;
       ai = new ChessAI.AI('b', parseInt(document.getElementById('ai-difficulty').value, 10));
-    } else {
-      aiEnabled = false;
+    }
+
+    if (mode === 'online') {
+      multiplayerEnabled = true;
+      Multiplayer.setCallbacks(applyRemoteMove, handleGameEvent);
+
+      // Load board state from active game if reconnecting
+      const ag = Multiplayer.getActiveGame();
+      if (ag) {
+        const colorName = ag.myColor === 'w' ? 'White' : 'Black';
+        const badge = document.getElementById('mp-color-badge');
+        if (badge) badge.textContent = colorName;
+      }
     }
 
     if (mode === 'puzzles') {
