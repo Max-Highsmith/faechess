@@ -9,6 +9,25 @@ import {
 
 const router = express.Router();
 
+/**
+ * Broadcast an event on a game's realtime channel.
+ * Must subscribe before sending, then clean up.
+ */
+async function broadcast(gameId, event, payload) {
+  const channel = supabase.channel(`game:${gameId}`);
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Channel subscribe timeout')), 5000);
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') { clearTimeout(timeout); resolve(); }
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        clearTimeout(timeout); reject(new Error(`Channel failed: ${status}`));
+      }
+    });
+  });
+  await channel.send({ type: 'broadcast', event, payload });
+  supabase.removeChannel(channel);
+}
+
 function generateInviteCode() {
   return crypto.randomBytes(6).toString('base64url').slice(0, 8);
 }
@@ -105,13 +124,7 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
     if (updateErr) throw updateErr;
 
     // Broadcast player_joined
-    const channel = supabase.channel(`game:${game.id}`);
-    await channel.send({
-      type: 'broadcast',
-      event: 'player_joined',
-      payload: { player_id: userId, color: joinerColor }
-    });
-    supabase.removeChannel(channel);
+    await broadcast(game.id, 'player_joined', { player_id: userId, color: joinerColor });
 
     res.json({
       game_id: updated.id,
@@ -297,13 +310,7 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       result
     };
 
-    const channel = supabase.channel(`game:${game.id}`);
-    await channel.send({
-      type: 'broadcast',
-      event: 'move',
-      payload
-    });
-    supabase.removeChannel(channel);
+    await broadcast(game.id, 'move', payload);
 
     res.json({ success: true, ...payload });
   } catch (error) {
@@ -352,13 +359,7 @@ router.post('/:id/resign', requireAuth, async (req, res) => {
     if (updateErr) throw updateErr;
 
     // Broadcast resignation
-    const channel = supabase.channel(`game:${game.id}`);
-    await channel.send({
-      type: 'broadcast',
-      event: 'resign',
-      payload: { player_id: userId, color: playerColor, result }
-    });
-    supabase.removeChannel(channel);
+    await broadcast(game.id, 'resign', { player_id: userId, color: playerColor, result });
 
     res.json({ success: true, result });
   } catch (error) {
