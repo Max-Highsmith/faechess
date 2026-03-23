@@ -2,13 +2,15 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view'];
+const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view', 'torus-mode-select', 'torus-game-view'];
 
 function hideAll() {
   for (const id of allViews) {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   }
+  // Hide renderers attached to document.body
+  if (typeof window.hideTorusRenderer === 'function') window.hideTorusRenderer();
 }
 
 function showView(id) {
@@ -23,6 +25,21 @@ export function showModeSelect() { showView('mode-select'); }
 export function showAnalyzer() { showView('analyzer-view'); }
 export function showOnlineSetup() { showView('online-setup'); }
 export function showLeaderboard() { showView('leaderboard-view'); }
+export function showTorusModeSelect() {
+  if (typeof window.hideTorusRenderer === 'function') window.hideTorusRenderer();
+  showView('torus-mode-select');
+}
+
+export function startTorusGame(mode) {
+  const gameView = document.getElementById('torus-game-view');
+  if (!gameView) return;
+  gameView.classList.remove('mode-torus-pvp', 'mode-torus-pvai');
+  gameView.classList.add('mode-' + mode);
+  showView('torus-game-view');
+  if (typeof window.setTorusGameMode === 'function') {
+    window.setTorusGameMode(mode);
+  }
+}
 
 export function startGame(mode) {
   const gameView = document.getElementById('game-view');
@@ -191,18 +208,44 @@ export function initNavigation() {
     leaderboardBack.addEventListener('click', () => showModeSelect());
   }
 
-  // Disabled game cards (5 Board and Torus)
+  // Disabled game cards (5 Board only)
   const play5Board = document.getElementById('play-5-board');
-  const playTorus = document.getElementById('play-torus');
+  if (play5Board) {
+    play5Board.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('This game mode is coming soon! Stay tuned.');
+    });
+  }
 
-  [play5Board, playTorus].forEach(btn => {
+  // Torus Chess card → torus mode select
+  const playTorus = document.getElementById('play-torus');
+  if (playTorus) {
+    playTorus.addEventListener('click', () => showTorusModeSelect());
+  }
+
+  // Torus mode select back → landing
+  const torusModeBack = document.getElementById('torus-mode-back');
+  if (torusModeBack) {
+    torusModeBack.addEventListener('click', () => showLandingPage());
+  }
+
+  // Torus mode cards → start torus game
+  const torusModes = ['torus-pvp', 'torus-pvai'];
+  for (const mode of torusModes) {
+    const btn = document.getElementById('torus-mode-' + mode.replace('torus-', ''));
     if (btn) {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        alert('This game mode is coming soon! Stay tuned.');
-      });
+      btn.addEventListener('click', () => startTorusGame(mode));
     }
-  });
+  }
+
+  // Torus game view back → torus mode select
+  const torusBackToMenu = document.getElementById('torus-back-to-menu');
+  if (torusBackToMenu) {
+    torusBackToMenu.addEventListener('click', () => {
+      if (typeof window.hideTorusRenderer === 'function') window.hideTorusRenderer();
+      showTorusModeSelect();
+    });
+  }
 
   console.log('✅ Navigation initialized');
 }

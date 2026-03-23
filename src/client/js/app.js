@@ -9,6 +9,8 @@ import * as AIModule from './ai.js';
 import * as PuzzlesModule from './puzzles.js';
 import * as TutorialModule from './tutorial.js';
 import * as MultiplayerModule from './multiplayer.js';
+import * as TorusGameModule from './torus-game.js';
+import * as TorusAIModule from './torus-ai.js';
 import { initAuth, getCurrentUser, getAuthToken, isAuthenticated } from './auth.js';
 import { initNavigation, startOnlineGame, showOnlineSetup } from './navigation.js';
 import { initProfileSetup } from './profile.js';
@@ -23,6 +25,8 @@ window.ChessAI = AIModule;
 window.Puzzles = PuzzlesModule;
 window.Tutorials = TutorialModule;
 window.Multiplayer = MultiplayerModule;
+window.TorusGameModule = TorusGameModule;
+window.TorusAIModule = TorusAIModule;
 
 // Initialize authentication
 initAuth();
@@ -42,12 +46,14 @@ setupOnlineHandlers();
 // Load render.js and main.js dynamically
 Promise.all([
   /* @vite-ignore */ import('./render.js'),
-  /* @vite-ignore */ import('./flat-render.js')
+  /* @vite-ignore */ import('./flat-render.js'),
+  /* @vite-ignore */ import('./torus-render.js')
 ]).then(() => {
-  // Now load main.js and analyzer.js which depend on the render files
+  // Now load main.js, analyzer.js, and torus-main.js which depend on the render files
   Promise.all([
     /* @vite-ignore */ import('./main.js'),
-    /* @vite-ignore */ import('./analyzer.js')
+    /* @vite-ignore */ import('./analyzer.js'),
+    /* @vite-ignore */ import('./torus-main.js')
   ]).then(([mainModule, analyzerModule]) => {
     console.log('✅ All modules loaded successfully!');
 

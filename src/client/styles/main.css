@@ -1003,3 +1003,60 @@ canvas { display: block; }
   accent-color: #7fdbca;
   cursor: pointer;
 }
+
+/* ===================================
+   TORUS CHESS
+   =================================== */
+
+#torus-mode-select {
+  width: 100vw; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  overflow-y: auto;
+}
+#torus-mode-select .back-btn { position: absolute; top: 20px; left: 20px; }
+
+/* Torus game view sidebar */
+#torus-ui {
+  position: absolute; top: 0; left: 0; width: 260px; height: 100vh;
+  background: rgba(10,10,30,0.85); padding: 16px; overflow-y: auto; z-index: 10;
+  border-right: 1px solid #333;
+}
+#torus-ui h1 { font-size: 1.3em; margin-bottom: 4px; color: #7fdbca; }
+#torus-ui h2 { font-size: 0.85em; font-weight: normal; color: #888; margin-bottom: 12px; }
+
+#torus-turn { font-size: 1.1em; margin-bottom: 8px; }
+#torus-status { color: #f7c948; margin-bottom: 12px; min-height: 20px; }
+
+#torus-captured { margin-bottom: 12px; }
+#torus-captured h3 { font-size: 0.85em; color: #888; margin-bottom: 4px; }
+
+#torus-move-log { max-height: 180px; overflow-y: auto; font-size: 0.8em; color: #aaa; border-top: 1px solid #333; padding-top: 8px; margin-top: 8px; }
+#torus-move-log div { padding: 1px 0; }
+
+#torus-controls { margin-top: 12px; }
+#torus-controls button, #torus-controls select {
+  background: #16213e; color: #eee; border: 1px solid #444; padding: 6px 12px;
+  cursor: pointer; margin: 2px; border-radius: 4px; font-size: 0.85em;
+}
+#torus-controls button:hover { background: #1a1a5e; }
+#torus-btn-surrender { background: #5e1a1a; border-color: #ff6b6b; color: #ff6b6b; }
+#torus-btn-surrender:hover { background: #7a2020; }
+#torus-btn-export { background: #1a3e2e; border-color: #7fdbca; color: #7fdbca; }
+#torus-btn-export:hover { background: #1a5e3e; }
+
+/* Torus mode visibility */
+#torus-game-view .mode-torus-game,
+#torus-game-view .mode-torus-ai { display: none; }
+
+#torus-game-view.mode-torus-pvp .mode-torus-game { display: block; }
+#torus-game-view.mode-torus-pvai .mode-torus-game { display: block; }
+#torus-game-view.mode-torus-pvai .mode-torus-ai { display: block; }
+
+/* Torus promotion modal */
+#torus-promotion-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6); z-index: 150;
+  display: flex; align-items: center; justify-content: center;
+}
+#torus-promotion-modal.hidden { display: none; }

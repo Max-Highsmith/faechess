@@ -121,10 +121,10 @@
           <p class="game-desc">Play across five interconnected boards</p>
         </button>
 
-        <button class="game-card disabled" id="play-torus">
+        <button class="game-card" id="play-torus">
           <div class="game-icon">🌀</div>
           <h2>Torus Chess</h2>
-          <p>Coming Soon</p>
+          <p>8×8 Wraparound</p>
           <p class="game-desc">Chess on a wraparound board topology</p>
         </button>
 
@@ -438,6 +438,85 @@
       </form>
       <p id="auth-error" class="error hidden"></p>
       <p id="auth-success" class="success hidden"></p>
+    </div>
+  </div>
+
+  <!-- Torus Mode Select Screen -->
+  <div id="torus-mode-select" class="hidden">
+    <div class="landing-container">
+      <button id="torus-mode-back" class="back-btn">&larr; Back to Menu</button>
+      <h1 class="landing-title">Torus Chess</h1>
+      <p class="landing-subtitle">8&times;8 Wraparound Board</p>
+      <div class="game-grid">
+        <button class="game-card" id="torus-mode-pvp">
+          <div class="game-icon">&#9876;&#65039;</div>
+          <h2>Player vs Player</h2>
+          <p>Local Multiplayer</p>
+          <p class="game-desc">Two players on the same device</p>
+        </button>
+        <button class="game-card" id="torus-mode-pvai">
+          <div class="game-icon">&#129302;</div>
+          <h2>Player vs AI</h2>
+          <p>Single Player</p>
+          <p class="game-desc">Challenge the minimax engine</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Torus Game View -->
+  <div id="torus-game-view" class="hidden">
+    <div id="torus-ui">
+      <div class="game-header">
+        <button id="torus-back-to-menu" class="back-btn">&larr; Back to Menu</button>
+        <h1>Torus Chess</h1>
+        <h2>8&times;8 Wraparound</h2>
+      </div>
+
+      <div class="mode-torus-game">
+        <div id="torus-turn">White to move</div>
+        <div id="torus-status"></div>
+      </div>
+
+      <div class="mode-torus-game">
+        <div id="torus-captured">
+          <h3>Captured</h3>
+          <div class="cap-row" id="torus-cap-white"></div>
+          <div class="cap-row" id="torus-cap-black"></div>
+        </div>
+      </div>
+
+      <div id="torus-controls">
+        <div class="mode-torus-game">
+          <button id="torus-btn-reset">New Game</button>
+          <button id="torus-btn-undo">Undo</button>
+          <button id="torus-btn-surrender">Surrender</button>
+          <button id="torus-btn-export">Export Game</button>
+        </div>
+        <div class="ctrl-row mode-torus-ai" id="torus-ai-difficulty-row">
+          <label>AI Level:</label>
+          <select id="torus-ai-difficulty">
+            <option value="1">Easy</option>
+            <option value="2" selected>Medium</option>
+            <option value="3">Hard</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="torus-move-log" class="mode-torus-game"></div>
+    </div>
+  </div>
+
+  <!-- Torus Pawn Promotion Modal -->
+  <div id="torus-promotion-modal" class="hidden">
+    <div class="promotion-content">
+      <p class="promotion-title">Promote pawn to:</p>
+      <div class="promotion-choices">
+        <button class="promotion-btn" data-piece="Q"><span class="promotion-icon">&#9813;</span><span>Queen</span></button>
+        <button class="promotion-btn" data-piece="R"><span class="promotion-icon">&#9814;</span><span>Rook</span></button>
+        <button class="promotion-btn" data-piece="B"><span class="promotion-icon">&#9815;</span><span>Bishop</span></button>
+        <button class="promotion-btn" data-piece="N"><span class="promotion-icon">&#9816;</span><span>Knight</span></button>
+      </div>
     </div>
   </div>
 
