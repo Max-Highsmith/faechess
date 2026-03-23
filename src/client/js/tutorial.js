@@ -1,5 +1,5 @@
 /**
- * Tutorial – Piece movement lessons for Raumschach 3D Chess
+ * Tutorial – Piece movement lessons & endgame lessons for Raumschach 3D Chess
  */
 
 const LESSONS = [
@@ -54,10 +54,50 @@ const LESSONS = [
   }
 ];
 
+/**
+ * Endgame lessons – interactive practice positions where the user plays White
+ * and the black king auto-responds. Goal: deliver checkmate.
+ */
+const ENDGAME_LESSONS = [
+  {
+    id: 'kqk',
+    name: 'King + Queen vs King',
+    icon: '♕',
+    description: 'The queen is powerful enough to force checkmate alone (with king support). Use the queen to restrict the enemy king to an edge or corner, then bring your king close to deliver mate. Avoid stalemate!',
+    board: {
+      '2,2,2': { type: 'K', color: 'w' },
+      '3,3,3': { type: 'Q', color: 'w' },
+      '0,0,0': { type: 'K', color: 'b' },
+    },
+    turn: 'w'
+  },
+  {
+    id: 'krrk',
+    name: 'King + 2 Rooks vs King',
+    icon: '♖',
+    description: 'Two rooks can force checkmate using the "ladder" technique: alternate rooks to cut off planes one at a time, pushing the king to the edge. Your king doesn\'t even need to help!',
+    board: {
+      '2,2,0': { type: 'K', color: 'w' },
+      '0,0,0': { type: 'R', color: 'w' },
+      '1,0,0': { type: 'R', color: 'w' },
+      '2,2,4': { type: 'K', color: 'b' },
+    },
+    turn: 'w'
+  }
+];
+
 export function getAll() {
   return LESSONS;
 }
 
 export function getByType(type) {
   return LESSONS.find(l => l.type === type) || null;
+}
+
+export function getAllEndgames() {
+  return ENDGAME_LESSONS;
+}
+
+export function getEndgameById(id) {
+  return ENDGAME_LESSONS.find(l => l.id === id) || null;
 }

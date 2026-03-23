@@ -2,7 +2,7 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view', 'torus-mode-select', 'torus-game-view'];
+const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view', 'torus-mode-select', 'torus-game-view', 'federation-view'];
 
 function hideAll() {
   for (const id of allViews) {
@@ -25,6 +25,8 @@ export function showModeSelect() { showView('mode-select'); }
 export function showAnalyzer() { showView('analyzer-view'); }
 export function showOnlineSetup() { showView('online-setup'); }
 export function showLeaderboard() { showView('leaderboard-view'); }
+export function showFederation() { showView('federation-view'); }
+
 export function showTorusModeSelect() {
   if (typeof window.hideTorusRenderer === 'function') window.hideTorusRenderer();
   showView('torus-mode-select');
@@ -246,6 +248,31 @@ export function initNavigation() {
       showTorusModeSelect();
     });
   }
+
+  // Federation link on landing page
+  const openFederation = document.getElementById('open-federation');
+  if (openFederation) {
+    openFederation.addEventListener('click', () => showFederation());
+  }
+
+  // Federation back button
+  const federationBack = document.getElementById('federation-back');
+  if (federationBack) {
+    federationBack.addEventListener('click', () => showLandingPage());
+  }
+
+  // Federation tab switching
+  const fedTabs = document.querySelectorAll('.fed-tab');
+  const fedPanels = document.querySelectorAll('.fed-panel');
+  fedTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      fedTabs.forEach(t => t.classList.remove('active'));
+      fedPanels.forEach(p => p.classList.add('hidden'));
+      tab.classList.add('active');
+      const panel = document.getElementById('fed-' + tab.dataset.fedTab);
+      if (panel) panel.classList.remove('hidden');
+    });
+  });
 
   console.log('✅ Navigation initialized');
 }

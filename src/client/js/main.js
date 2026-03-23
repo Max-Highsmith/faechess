@@ -182,6 +182,10 @@
   // ── Cell click handler ─────────────────────────────────────────
 
   function handleCellClick(x, y, z) {
+    if (endgameMode) {
+      handleEndgameMove(x, y, z);
+      return;
+    }
     if (tutorialMode) {
       handleTutorialMove(x, y, z);
       return;
@@ -443,6 +447,14 @@
   const tutorialDescEl = document.getElementById('tutorial-description');
   const tutorialListEl = document.getElementById('tutorial-list');
 
+  // ── Endgame tutorial mode ───────────────────────────────────
+  let endgameMode = false;
+  let activeEndgame = null;
+  const endgameDescEl = document.getElementById('endgame-description');
+  const endgameStatusEl = document.getElementById('endgame-status');
+  const endgameControlsEl = document.getElementById('endgame-controls');
+  const endgameListEl = document.getElementById('endgame-list');
+
   // Restore solved state from localStorage
   try {
     const saved = localStorage.getItem('raumschach-solved');
@@ -601,6 +613,14 @@
     const lesson = Tutorials.getByType(type);
     if (!lesson) return;
 
+    // Exit endgame mode if active
+    endgameMode = false;
+    activeEndgame = null;
+    endgameDescEl.textContent = '';
+    endgameStatusEl.textContent = '';
+    endgameControlsEl.style.display = 'none';
+    document.querySelectorAll('.endgame-card').forEach(c => c.classList.remove('active'));
+
     tutorialMode = true;
     selected = null;
     legalTargets = [];
@@ -678,6 +698,217 @@
       }
 
       // Clicked empty space — deselect
+      selected = null;
+      legalTargets = [];
+      ViewProxy.clearHighlights();
+      return;
+    }
+
+    if (piece && piece.color === 'w') {
+      selectPiece(x, y, z);
+    }
+  }
+
+  // ── Endgame tutorial functions ────────────────────────────────
+
+  function buildEndgameList() {
+    endgameListEl.innerHTML = '';
+    const all = Tutorials.getAllEndgames();
+    for (const lesson of all) {
+      const card = document.createElement('div');
+      card.className = 'endgame-card';
+      card.dataset.id = lesson.id;
+      card.innerHTML =
+        `<span class="endgame-icon">${lesson.icon}</span>` +
+        `<span class="endgame-name">${lesson.name}</span>`;
+      card.addEventListener('click', () => enterEndgameLesson(lesson.id));
+      endgameListEl.appendChild(card);
+    }
+  }
+
+  function enterEndgameLesson(id) {
+    const lesson = Tutorials.getEndgameById(id);
+    if (!lesson) return;
+
+    endgameMode = true;
+    tutorialMode = true;
+    activeEndgame = lesson;
+    selected = null;
+    legalTargets = [];
+
+    game.reset();
+    game.board = Raumschach.cloneBoard(lesson.board);
+    game.turn = lesson.turn;
+    game.history = [];
+    game.captured = { w: [], b: [] };
+    game.gameOver = false;
+    game.result = null;
+
+    ViewProxy.clearHighlights();
+    ViewProxy.updatePieces(game.board);
+
+    turnEl.textContent = lesson.name;
+    statusEl.textContent = 'White to move — deliver checkmate!';
+    statusEl.style.color = '#7fdbca';
+    endgameDescEl.textContent = lesson.description;
+    endgameStatusEl.textContent = '';
+    endgameControlsEl.style.display = 'block';
+    tutorialDescEl.textContent = '';
+    moveLogEl.innerHTML = '';
+
+    // Deselect piece tutorial cards
+    document.querySelectorAll('.tutorial-card').forEach(c => c.classList.remove('active'));
+    // Highlight active endgame card
+    document.querySelectorAll('.endgame-card').forEach(c => c.classList.remove('active'));
+    const card = endgameListEl.querySelector(`[data-id="${id}"]`);
+    if (card) card.classList.add('active');
+  }
+
+  function exitEndgameLesson() {
+    endgameMode = false;
+    activeEndgame = null;
+    selected = null;
+    legalTargets = [];
+
+    game.reset();
+    game.board = {};
+    ViewProxy.clearHighlights();
+    ViewProxy.updatePieces(game.board);
+
+    turnEl.textContent = 'Tutorial';
+    statusEl.textContent = 'Select a piece to see how it moves';
+    statusEl.style.color = '#7fdbca';
+    endgameDescEl.textContent = '';
+    endgameStatusEl.textContent = '';
+    endgameControlsEl.style.display = 'none';
+    moveLogEl.innerHTML = '';
+
+    document.querySelectorAll('.endgame-card').forEach(c => c.classList.remove('active'));
+  }
+
+  /**
+   * Simple black king AI: pick the legal move that maximizes distance
+   * from white pieces and prefers central squares (away from edges).
+   */
+  function pickBlackKingMove() {
+    // Find the black king
+    const bk = Raumschach.findKing(game.board, 'b');
+    if (!bk) return null;
+
+    const moves = Raumschach.legalMoves(game.board, bk[0], bk[1], bk[2]);
+    if (moves.length === 0) return null;
+
+    // Score each move: prefer distance from white pieces + distance from edges
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (const [mx, my, mz] of moves) {
+      let score = 0;
+
+      // Distance from edges (prefer center)
+      score += Math.min(mx, 4 - mx) + Math.min(my, 4 - my) + Math.min(mz, 4 - mz);
+
+      // Distance from all white pieces
+      for (const k of Object.keys(game.board)) {
+        const p = game.board[k];
+        if (p.color !== 'w') continue;
+        const [px, py, pz] = Raumschach.parseKey(k);
+        score += Math.abs(mx - px) + Math.abs(my - py) + Math.abs(mz - pz);
+      }
+
+      // Small random factor to avoid repetitive play
+      score += Math.random() * 0.5;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = [mx, my, mz];
+      }
+    }
+
+    return best ? { from: bk, to: best } : null;
+  }
+
+  function handleEndgameMove(x, y, z) {
+    if (game.gameOver) return;
+    if (game.turn !== 'w') return;
+
+    const k = Raumschach.key(x, y, z);
+    const piece = game.board[k];
+
+    if (selected) {
+      const isTarget = legalTargets.some(([tx, ty, tz]) => tx === x && ty === y && tz === z);
+      if (isTarget) {
+        const from = selected;
+        const movingPiece = game.board[Raumschach.key(...from)];
+        const moveNum = Math.floor(game.history.length / 2) + 1;
+        const targetPiece = game.board[k];
+
+        if (game.makeMove(from, [x, y, z])) {
+          const notation = game.getMoveNotation(from, [x, y, z], movingPiece, targetPiece);
+          addMoveToLog(notation, moveNum);
+          selected = null;
+          legalTargets = [];
+          ViewProxy.clearHighlights();
+          ViewProxy.updatePieces(game.board);
+          ViewProxy.highlightLastMove(from, [x, y, z]);
+
+          if (game.gameOver) {
+            if (game.result && game.result.includes('checkmate')) {
+              endgameStatusEl.textContent = 'Checkmate! Well done!';
+              endgameStatusEl.style.color = '#44ff88';
+              turnEl.textContent = 'Checkmate!';
+            } else {
+              endgameStatusEl.textContent = 'Stalemate — try again! Avoid trapping the king with no legal moves.';
+              endgameStatusEl.style.color = '#ff6b6b';
+              turnEl.textContent = 'Stalemate';
+            }
+            statusEl.textContent = game.result;
+            statusEl.style.color = game.result.includes('checkmate') ? '#44ff88' : '#ff6b6b';
+            return;
+          }
+
+          if (game.isCheck()) {
+            const kp = Raumschach.findKing(game.board, 'b');
+            if (kp) ViewProxy.highlightCheck(...kp);
+          }
+
+          turnEl.textContent = 'Black responds...';
+
+          // Auto-play black king after a short delay
+          setTimeout(() => {
+            const blackMove = pickBlackKingMove();
+            if (!blackMove) return;
+
+            const bMoveNum = Math.floor(game.history.length / 2) + 1;
+            const bPiece = game.board[Raumschach.key(...blackMove.from)];
+            const bTarget = game.board[Raumschach.key(...blackMove.to)];
+
+            if (game.makeMove(blackMove.from, blackMove.to)) {
+              const bNotation = game.getMoveNotation(blackMove.from, blackMove.to, bPiece, bTarget);
+              addMoveToLog(bNotation, bMoveNum);
+              ViewProxy.clearHighlights();
+              ViewProxy.updatePieces(game.board);
+              ViewProxy.highlightLastMove(blackMove.from, blackMove.to);
+
+              if (game.isCheck() && !game.gameOver) {
+                const kp = Raumschach.findKing(game.board, 'w');
+                if (kp) ViewProxy.highlightCheck(...kp);
+              }
+
+              turnEl.textContent = activeEndgame ? activeEndgame.name : 'Endgame';
+              statusEl.textContent = 'White to move';
+              statusEl.style.color = '#7fdbca';
+            }
+          }, 400);
+        }
+        return;
+      }
+
+      if (piece && piece.color === 'w') {
+        selectPiece(x, y, z);
+        return;
+      }
+
       selected = null;
       legalTargets = [];
       ViewProxy.clearHighlights();
@@ -898,6 +1129,7 @@
     if (mode === 'tutorial') {
       tutorialMode = true;
       buildTutorialList();
+      buildEndgameList();
       // Show empty board until a piece is selected
       game.board = {};
       ViewProxy.updatePieces(game.board);
@@ -905,8 +1137,13 @@
       statusEl.textContent = 'Select a piece to see how it moves';
       statusEl.style.color = '#7fdbca';
       tutorialDescEl.textContent = '';
+      endgameDescEl.textContent = '';
+      endgameStatusEl.textContent = '';
+      endgameControlsEl.style.display = 'none';
     } else {
       tutorialMode = false;
+      endgameMode = false;
+      activeEndgame = null;
       tutorialPiecePos = null;
     }
 
@@ -981,4 +1218,14 @@
   });
 
   document.getElementById('btn-exit-puzzle').addEventListener('click', exitPuzzle);
+
+  // ── Endgame tutorial controls ─────────────────────────────────
+
+  document.getElementById('btn-reset-endgame').addEventListener('click', () => {
+    if (activeEndgame) {
+      enterEndgameLesson(activeEndgame.id);
+    } else {
+      exitEndgameLesson();
+    }
+  });
 })();

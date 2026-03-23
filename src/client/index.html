@@ -135,6 +135,17 @@
           <p class="game-desc">Load a game report and analyze every move</p>
         </button>
       </div>
+
+      <div id="federation-link">
+        <button id="open-federation" class="federation-banner">
+          <span class="federation-icon">&#127983;</span>
+          <div class="federation-banner-text">
+            <h3>International Federation of 3D Chess</h3>
+            <p>Official rules, news, tournaments &amp; governance</p>
+          </div>
+          <span class="federation-arrow">&rarr;</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -371,6 +382,14 @@
       <h3>Pieces</h3>
       <div id="tutorial-description"></div>
       <div id="tutorial-list"></div>
+
+      <h3 style="margin-top: 16px;">Endgames</h3>
+      <div id="endgame-description"></div>
+      <div id="endgame-status"></div>
+      <div id="endgame-controls" style="display:none; margin-bottom:6px;">
+        <button id="btn-reset-endgame">Reset Position</button>
+      </div>
+      <div id="endgame-list"></div>
     </div>
 
     <div id="move-log" class="mode-game"></div>
@@ -519,6 +538,245 @@
       </div>
     </div>
   </div>
+
+  <!-- Federation View (IF3DC) -->
+  <div id="federation-view" class="hidden">
+    <div class="federation-container">
+      <button id="federation-back" class="back-btn">&larr; Back to Menu</button>
+
+      <div class="federation-header">
+        <h1 class="federation-title">International Federation of 3D Chess</h1>
+        <p class="federation-subtitle">IF3DC &mdash; The Governing Body of Three-Dimensional Chess</p>
+      </div>
+
+      <nav class="federation-tabs" id="federation-tabs">
+        <button class="fed-tab active" data-fed-tab="about">About</button>
+        <button class="fed-tab" data-fed-tab="rules">Official Rules</button>
+        <button class="fed-tab" data-fed-tab="news">News</button>
+        <button class="fed-tab" data-fed-tab="tournaments">Tournaments</button>
+        <button class="fed-tab" data-fed-tab="governance">Governance</button>
+      </nav>
+
+      <div class="federation-content">
+
+        <!-- ABOUT TAB -->
+        <div class="fed-panel" id="fed-about">
+          <section class="fed-section">
+            <h2>Our Mission</h2>
+            <p>The International Federation of 3D Chess (IF3DC) exists to promote, standardize, and advance the game of three-dimensional chess worldwide. Founded to bring structure and competitive integrity to Raumschach and its variants, the IF3DC serves as the governing body for all sanctioned 3D chess competitions.</p>
+            <p>We believe that extending chess into three dimensions unlocks a new frontier of strategic thinking&mdash;one that challenges players to reason spatially, plan across vertical and horizontal planes simultaneously, and master entirely new tactical motifs.</p>
+          </section>
+
+          <section class="fed-section">
+            <h2>What is 3D Chess?</h2>
+            <p>Three-dimensional chess, or <em>Raumschach</em> (&ldquo;space chess&rdquo;), was invented by Dr. Ferdinand Maack in Hamburg, Germany in 1907. Played on a 5&times;5&times;5 board comprising five stacked levels, it extends classical chess into the third dimension, introducing new strategic possibilities and the unique <strong>Unicorn</strong> piece&mdash;which moves along triagonal lines through all three axes simultaneously.</p>
+            <p>Unlike novelty multi-level chess variants, Raumschach is a deeply studied game with over a century of recorded play, published theory, and competitive history.</p>
+          </section>
+
+          <section class="fed-section">
+            <h2>History</h2>
+            <div class="fed-timeline">
+              <div class="timeline-item">
+                <span class="timeline-year">1907</span>
+                <p>Dr. Ferdinand Maack invents Raumschach in Hamburg, Germany, creating the first rigorous three-dimensional chess variant.</p>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-year">1919</span>
+                <p>Maack publishes the first formal rules and algebraic notation system for Raumschach, enabling recorded games and correspondence play.</p>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-year">1920s&ndash;40s</span>
+                <p>Raumschach gains a following among chess clubs in Germany and Central Europe, with organized matches and published analysis.</p>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-year">2024</span>
+                <p>Fae Chess launches as the first modern online platform for Raumschach, bringing 3D chess to the internet era with ELO ratings and multiplayer support.</p>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-year">2026</span>
+                <p>The International Federation of 3D Chess (IF3DC) is established to govern competitive play, standardize rules, and grow the global community.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- RULES TAB -->
+        <div class="fed-panel hidden" id="fed-rules">
+          <section class="fed-section">
+            <h2>Board Structure</h2>
+            <p>The Raumschach board consists of five 5&times;5 levels stacked vertically (levels A through E, bottom to top). Each square is identified by three coordinates: <strong>column</strong> (a&ndash;e), <strong>row</strong> (1&ndash;5), and <strong>level</strong> (A&ndash;E). For example, <code>c3C</code> is column c, row 3, level C (the middle level).</p>
+            <p>The board contains <strong>125 squares</strong> total. Movement through three dimensions creates 26 possible directions from any interior square (compared to 8 in standard chess).</p>
+          </section>
+
+          <section class="fed-section">
+            <h2>Piece Movements</h2>
+            <div class="fed-piece-list">
+              <div class="fed-piece-card">
+                <span class="fed-piece-icon">&#9812;</span>
+                <h3>King</h3>
+                <p>Moves one square in any of the 26 directions: orthogonal, diagonal, and triagonal. Must avoid check.</p>
+              </div>
+              <div class="fed-piece-card">
+                <span class="fed-piece-icon">&#9813;</span>
+                <h3>Queen</h3>
+                <p>Combines the powers of Rook and Bishop. Moves any number of squares along orthogonal or diagonal lines (but not triagonals).</p>
+              </div>
+              <div class="fed-piece-card">
+                <span class="fed-piece-icon">&#9814;</span>
+                <h3>Rook</h3>
+                <p>Moves any number of squares along one axis only&mdash;horizontally, forward/back, or vertically between levels.</p>
+              </div>
+              <div class="fed-piece-card">
+                <span class="fed-piece-icon">&#9815;</span>
+                <h3>Bishop</h3>
+                <p>Moves any number of squares along 2-axis diagonals. Stays on its color complex (light or dark squares).</p>
+              </div>
+              <div class="fed-piece-card">
+                <span class="fed-piece-icon">&#9816;</span>
+                <h3>Knight</h3>
+                <p>Leaps in an L-shape: 2 squares along one axis and 1 along another. Can jump over pieces. Works across all three axes.</p>
+              </div>
+              <div class="fed-piece-card">
+                <span class="fed-piece-icon">&#9822;</span>
+                <h3>Unicorn</h3>
+                <p>The piece unique to 3D chess. Moves along triagonal lines&mdash;diagonals that pass through all three axes simultaneously. One square or many.</p>
+              </div>
+              <div class="fed-piece-card">
+                <span class="fed-piece-icon">&#9817;</span>
+                <h3>Pawn</h3>
+                <p>Advances one square forward (toward the opponent&rsquo;s side). Captures one square diagonally forward. Promotes on the opponent&rsquo;s back rank.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="fed-section">
+            <h2>Starting Position</h2>
+            <p>Each player begins with 20 pieces arranged across two levels. White occupies levels A and B; Black occupies levels D and E. Level C (the middle) starts empty.</p>
+            <p>Each side has: 1 King, 1 Queen, 2 Rooks, 2 Bishops, 2 Knights, 2 Unicorns, and 10 Pawns.</p>
+          </section>
+
+          <section class="fed-section">
+            <h2>Winning the Game</h2>
+            <p>The objective is the same as classical chess: <strong>checkmate</strong> the opponent&rsquo;s King. A player also wins if the opponent resigns. The game is drawn by stalemate, agreement, threefold repetition, or the 50-move rule.</p>
+          </section>
+        </div>
+
+        <!-- NEWS TAB -->
+        <div class="fed-panel hidden" id="fed-news">
+          <div class="fed-news-list">
+            <article class="fed-news-item">
+              <span class="fed-news-date">March 2026</span>
+              <h3>IF3DC Launches Official Website</h3>
+              <p>The International Federation of 3D Chess announces the launch of its official online presence at fae-chess.com, serving as both the governing body&rsquo;s headquarters and the premier platform for playing 3D chess online.</p>
+            </article>
+            <article class="fed-news-item">
+              <span class="fed-news-date">March 2026</span>
+              <h3>Torus Chess Added to Official Game Modes</h3>
+              <p>The IF3DC recognizes Torus Chess (8&times;8 wraparound) as an official variant alongside classical Raumschach. Torus Chess is now available for play on the platform.</p>
+            </article>
+            <article class="fed-news-item">
+              <span class="fed-news-date">2026</span>
+              <h3>Online Rated Play Now Available</h3>
+              <p>Players can now compete in rated online matches with ELO tracking. Create a game, share the invite link, and your rating updates automatically. View the leaderboard to see the top-ranked players.</p>
+            </article>
+            <article class="fed-news-item">
+              <span class="fed-news-date">2024</span>
+              <h3>Fae Chess Platform Launches</h3>
+              <p>The Fae Chess platform goes live with 3D Raumschach, PvP, PvAI, puzzles, and a tutorial mode. The first online implementation of 5&times;5&times;5 Raumschach with a fully 3D interactive board.</p>
+            </article>
+          </div>
+        </div>
+
+        <!-- TOURNAMENTS TAB -->
+        <div class="fed-panel hidden" id="fed-tournaments">
+          <section class="fed-section">
+            <h2>Upcoming Events</h2>
+            <div class="fed-event-list">
+              <div class="fed-event-card">
+                <div class="fed-event-date-badge">
+                  <span class="event-month">TBD</span>
+                  <span class="event-year">2026</span>
+                </div>
+                <div class="fed-event-info">
+                  <h3>1st IF3DC World Championship</h3>
+                  <p>The inaugural World Championship of 3D Chess. Format, dates, and qualification details to be announced.</p>
+                  <span class="fed-event-status upcoming">Coming Soon</span>
+                </div>
+              </div>
+              <div class="fed-event-card">
+                <div class="fed-event-date-badge">
+                  <span class="event-month">TBD</span>
+                  <span class="event-year">2026</span>
+                </div>
+                <div class="fed-event-info">
+                  <h3>IF3DC Online Open</h3>
+                  <p>An open online tournament for all rated players on the platform. Swiss format, open registration.</p>
+                  <span class="fed-event-status upcoming">Coming Soon</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="fed-section">
+            <h2>Tournament Format</h2>
+            <p>All IF3DC-sanctioned tournaments use the Swiss system for pairing. Players are matched against opponents of similar rating in each round. Final standings are determined by total points, with tiebreaks resolved by Buchholz score.</p>
+            <p>Competitive games are played using the standard Raumschach rules as defined in the Official Rules section. Time controls will be announced per event.</p>
+          </section>
+
+          <section class="fed-section">
+            <h2>Rating System</h2>
+            <p>The IF3DC uses an ELO-based rating system. All rated games played through the official platform contribute to a player&rsquo;s IF3DC rating. New players start at 1200. View the current standings on the <strong>Leaderboard</strong>.</p>
+          </section>
+        </div>
+
+        <!-- GOVERNANCE TAB -->
+        <div class="fed-panel hidden" id="fed-governance">
+          <section class="fed-section">
+            <h2>About IF3DC Governance</h2>
+            <p>The International Federation of 3D Chess operates as an open governing body dedicated to the growth and integrity of three-dimensional chess. Our governance structure is designed to be transparent, community-driven, and responsive to the needs of players worldwide.</p>
+          </section>
+
+          <section class="fed-section">
+            <h2>Federation Council</h2>
+            <div class="fed-officials">
+              <div class="fed-official-card">
+                <div class="official-avatar-placeholder">&#9818;</div>
+                <h3>President</h3>
+                <p>To be elected</p>
+              </div>
+              <div class="fed-official-card">
+                <div class="official-avatar-placeholder">&#9820;</div>
+                <h3>Rules Committee Chair</h3>
+                <p>To be appointed</p>
+              </div>
+              <div class="fed-official-card">
+                <div class="official-avatar-placeholder">&#9822;</div>
+                <h3>Tournament Director</h3>
+                <p>To be appointed</p>
+              </div>
+              <div class="fed-official-card">
+                <div class="official-avatar-placeholder">&#9821;</div>
+                <h3>Community Representative</h3>
+                <p>To be elected</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="fed-section">
+            <h2>Membership</h2>
+            <p>The IF3DC welcomes individual players, chess clubs, and national organizations to join the federation. Membership is currently free for all registered players on the platform. As the community grows, we will introduce formal membership tiers with additional benefits for competitive players and organizations.</p>
+          </section>
+
+          <section class="fed-section">
+            <h2>Contact</h2>
+            <p>For inquiries about the IF3DC, tournament hosting, or partnerships, reach out through the platform. We are actively seeking volunteers, organizers, and contributors to help grow the world of 3D chess.</p>
+          </section>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- End Federation View -->
 
   <!-- Game Over Modal -->
   <div id="game-over-modal" class="modal hidden">
