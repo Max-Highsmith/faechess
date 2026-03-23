@@ -65,9 +65,9 @@ const ENDGAME_LESSONS = [
     icon: '♕',
     description: 'The queen is powerful enough to force checkmate alone (with king support). Use the queen to restrict the enemy king to an edge or corner, then bring your king close to deliver mate. Avoid stalemate!',
     board: {
-      '2,2,2': { type: 'K', color: 'w' },
-      '3,3,3': { type: 'Q', color: 'w' },
-      '0,0,0': { type: 'K', color: 'b' },
+      '2,2,0': { type: 'K', color: 'w' },
+      '2,2,1': { type: 'Q', color: 'w' },
+      '2,2,4': { type: 'K', color: 'b' },
     },
     turn: 'w'
   },
@@ -79,7 +79,7 @@ const ENDGAME_LESSONS = [
     board: {
       '2,2,0': { type: 'K', color: 'w' },
       '0,0,0': { type: 'R', color: 'w' },
-      '1,0,0': { type: 'R', color: 'w' },
+      '1,0,1': { type: 'R', color: 'w' },
       '2,2,4': { type: 'K', color: 'b' },
     },
     turn: 'w'
