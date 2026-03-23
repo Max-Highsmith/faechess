@@ -23,11 +23,15 @@ export function wrap(n) { return ((n % 8) + 8) % 8; }
 export function initialBoard() {
   const board = {};
   const backRank = ['R','N','B','Q','K','B','N','R'];
+  // White: back rank at y=0, pawns at y=1
+  // Black: pawns at y=4, back rank at y=5
+  // Offset layout gives equal 2-rank buffers in both directions on the torus,
+  // preventing back-rank pieces from attacking each other through the wrap.
   for (let x = 0; x < 8; x++) {
     board[key(x, 0)] = { type: backRank[x], color: 'w' };
     board[key(x, 1)] = { type: 'P', color: 'w' };
-    board[key(x, 6)] = { type: 'P', color: 'b' };
-    board[key(x, 7)] = { type: backRank[x], color: 'b' };
+    board[key(x, 4)] = { type: 'P', color: 'b' };
+    board[key(x, 5)] = { type: backRank[x], color: 'b' };
   }
   return board;
 }
@@ -86,8 +90,8 @@ function kingMoves(board, x, y, color) {
 function pawnMoves(board, x, y, color, enPassantSquare) {
   const moves = [];
   const dir = color === 'w' ? 1 : -1;
-  const startRank = color === 'w' ? 1 : 6;
-  const promoRank = color === 'w' ? 7 : 0;
+  const startRank = color === 'w' ? 1 : 4;
+  const promoRank = color === 'w' ? 5 : 0;
 
   // Forward one (rank does NOT wrap for pawns)
   const fy = y + dir;
@@ -172,7 +176,7 @@ export function cloneBoard(board) {
 export function isPromotionMove(board, from, to) {
   const piece = board[key(from[0], from[1])];
   if (!piece || piece.type !== 'P') return false;
-  if (piece.color === 'w' && to[1] === 7) return true;
+  if (piece.color === 'w' && to[1] === 5) return true;
   if (piece.color === 'b' && to[1] === 0) return true;
   return false;
 }
@@ -199,7 +203,7 @@ export function applyMove(board, from, to, promoteTo, enPassantSquare) {
 
   // Pawn promotion
   if (piece.type === 'P') {
-    if ((piece.color === 'w' && ty === 7) || (piece.color === 'b' && ty === 0)) {
+    if ((piece.color === 'w' && ty === 5) || (piece.color === 'b' && ty === 0)) {
       nb[tk].type = promoteTo || 'Q';
     }
   }
