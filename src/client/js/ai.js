@@ -35,7 +35,7 @@ function allLegalMoves(board, color) {
   return moves;
 }
 
-function minimax(board, depth, alpha, beta, maximizing, aiColor) {
+function minimax(board, depth, alpha, beta, maximizing, aiColor, isRoot = false) {
   const currentColor = maximizing ? aiColor : (aiColor === 'w' ? 'b' : 'w');
   const moves = allLegalMoves(board, currentColor);
 
@@ -48,7 +48,7 @@ function minimax(board, depth, alpha, beta, maximizing, aiColor) {
         score = 0;
       }
     }
-    return { score, move: null };
+    return { score, move: null, topMoves: null };
   }
 
   // Move ordering: captures and checks first
@@ -59,20 +59,28 @@ function minimax(board, depth, alpha, beta, maximizing, aiColor) {
   });
 
   let bestMove = moves[0];
+  // At root, track top 3 moves by score
+  const topMoves = isRoot ? [] : null;
 
   if (maximizing) {
     let maxEval = -Infinity;
     for (const move of moves) {
       const { board: nb } = GameModule.applyMove(board, move.from, move.to);
       const { score } = minimax(nb, depth - 1, alpha, beta, false, aiColor);
+      if (isRoot) {
+        topMoves.push({ move, score });
+      }
       if (score > maxEval) {
         maxEval = score;
         bestMove = move;
       }
       alpha = Math.max(alpha, score);
-      if (beta <= alpha) break;
+      if (!isRoot && beta <= alpha) break;
     }
-    return { score: maxEval, move: bestMove };
+    if (isRoot) {
+      topMoves.sort((a, b) => b.score - a.score);
+    }
+    return { score: maxEval, move: bestMove, topMoves };
   } else {
     let minEval = Infinity;
     for (const move of moves) {
@@ -85,7 +93,7 @@ function minimax(board, depth, alpha, beta, maximizing, aiColor) {
       beta = Math.min(beta, score);
       if (beta <= alpha) break;
     }
-    return { score: minEval, move: bestMove };
+    return { score: minEval, move: bestMove, topMoves: null };
   }
 }
 
@@ -108,10 +116,9 @@ export class AI {
   }
 
   getBestMove(board) {
-    const ranked = rankMoves(board, this.color, this.depth);
-    if (ranked.length === 0) return null;
-    const top = ranked.slice(0, Math.min(3, ranked.length));
-    return top[Math.floor(Math.random() * top.length)];
+    const result = minimax(board, this.depth, -Infinity, Infinity, true, this.color, true);
+    const top = result.topMoves.slice(0, 3);
+    return top[Math.floor(Math.random() * top.length)].move;
   }
 }
 
