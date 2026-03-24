@@ -108,8 +108,10 @@ export class AI {
   }
 
   getBestMove(board) {
-    const result = minimax(board, this.depth, -Infinity, Infinity, true, this.color);
-    return result.move;
+    const ranked = rankMoves(board, this.color, this.depth);
+    if (ranked.length === 0) return null;
+    const top = ranked.slice(0, Math.min(3, ranked.length));
+    return top[Math.floor(Math.random() * top.length)];
   }
 }
 

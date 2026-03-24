@@ -168,18 +168,18 @@ function pawnMoves(board, x, y, z, color) {
   if (inBounds(x, y, z+dir) && !board[key(x, y, z+dir)]) {
     moves.push([x, y, z+dir]);
   }
-  // Captures: diagonal forward (in y-x plane, z-x plane, y-z plane)
-  for (const dx of [-1, 0, 1]) {
-    for (const [dy, dz] of [[dir, 0], [0, dir], [dir, dir]]) {
-      if (dx === 0 && dy === 0 && dz === 0) continue;
-      if (dx === 0 && dy === dir && dz === 0) continue; // Forward non-capture
-      if (dx === 0 && dy === 0 && dz === dir) continue; // Forward non-capture
-      const nx = x+dx, ny = y+dy, nz = z+dz;
-      if (!inBounds(nx, ny, nz)) continue;
-      const target = board[key(nx, ny, nz)];
-      if (target && target.color !== color) {
-        moves.push([nx, ny, nz]);
-      }
+  // Captures: bishop-type diagonal (exactly 2 axes change) with a forward component
+  const captureDirs = [
+    [-1, dir, 0], [1, dir, 0],   // diagonal in x-y plane (forward in y)
+    [-1, 0, dir], [1, 0, dir],   // diagonal in x-z plane (forward in z)
+    [0, dir, dir],                 // diagonal in y-z plane (forward in both)
+  ];
+  for (const [dx, dy, dz] of captureDirs) {
+    const nx = x+dx, ny = y+dy, nz = z+dz;
+    if (!inBounds(nx, ny, nz)) continue;
+    const target = board[key(nx, ny, nz)];
+    if (target && target.color !== color) {
+      moves.push([nx, ny, nz]);
     }
   }
   return moves;
