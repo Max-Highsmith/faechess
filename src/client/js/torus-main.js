@@ -13,6 +13,36 @@
   let ai = new window.TorusAIModule.TorusAI('b', 2);
 
   let rendererInitialized = false;
+  let renderer3dInitialized = false;
+  let activeView = '2d'; // '2d' or '3d'
+
+  // ── View proxy — routes to whichever renderer is active ────────
+  const V = {
+    updatePieces(board) {
+      if (activeView === '3d') Torus3DRenderer.updatePieces(board);
+      else TorusRenderer.updatePieces(board);
+    },
+    highlightCells(keys, type) {
+      if (activeView === '3d') Torus3DRenderer.highlightCells(keys, type);
+      else TorusRenderer.highlightCells(keys, type);
+    },
+    highlightCheck(x, y) {
+      if (activeView === '3d') Torus3DRenderer.highlightCheck(x, y);
+      else TorusRenderer.highlightCheck(x, y);
+    },
+    clearHighlights() {
+      if (activeView === '3d') Torus3DRenderer.clearHighlights();
+      else TorusRenderer.clearHighlights();
+    },
+    highlightLastMove(from, to) {
+      if (activeView === '3d') Torus3DRenderer.highlightLastMove(from, to);
+      else TorusRenderer.highlightLastMove(from, to);
+    },
+    clearLastMove() {
+      if (activeView === '3d') Torus3DRenderer.clearLastMove();
+      else TorusRenderer.clearLastMove();
+    }
+  };
 
   // ── Promotion modal ──────────────────────────────────────────
   const promotionModal = document.getElementById('torus-promotion-modal');
@@ -106,13 +136,13 @@
             addMoveToLog(notation, moveNum);
             selected = null;
             legalTargets = [];
-            TorusRenderer.clearHighlights();
-            TorusRenderer.updatePieces(game.board);
-            TorusRenderer.highlightLastMove(from, [x, y]);
+            V.clearHighlights();
+            V.updatePieces(game.board);
+            V.highlightLastMove(from, [x, y]);
 
             if (game.isCheck() && !game.gameOver) {
               const kp = findCurrentKing();
-              if (kp) TorusRenderer.highlightCheck(...kp);
+              if (kp) V.highlightCheck(...kp);
             }
 
             updateUI();
@@ -135,7 +165,7 @@
 
       selected = null;
       legalTargets = [];
-      TorusRenderer.clearHighlights();
+      V.clearHighlights();
       return;
     }
 
@@ -147,9 +177,9 @@
   function selectPiece(x, y) {
     selected = [x, y];
     legalTargets = game.getLegalMoves(x, y);
-    TorusRenderer.clearHighlights();
-    TorusRenderer.highlightCells([[x, y]], 'selected');
-    TorusRenderer.highlightCells(legalTargets, 'move');
+    V.clearHighlights();
+    V.highlightCells([[x, y]], 'selected');
+    V.highlightCells(legalTargets, 'move');
   }
 
   function findCurrentKing() {
@@ -183,13 +213,13 @@
         addMoveToLog(notation, moveNum);
         selected = null;
         legalTargets = [];
-        TorusRenderer.clearHighlights();
-        TorusRenderer.updatePieces(game.board);
-        TorusRenderer.highlightLastMove(move.from, move.to);
+        V.clearHighlights();
+        V.updatePieces(game.board);
+        V.highlightLastMove(move.from, move.to);
 
         if (game.isCheck() && !game.gameOver) {
           const kp = findCurrentKing();
-          if (kp) TorusRenderer.highlightCheck(...kp);
+          if (kp) V.highlightCheck(...kp);
         }
 
         updateUI();
@@ -197,12 +227,33 @@
     }, 300);
   }
 
-  // ── Init renderer on first use ──────────────────────────────────
+  // ── Init renderers lazily ──────────────────────────────────────
 
   function ensureRenderer() {
     if (!rendererInitialized) {
       TorusRenderer.init(document.body, handleCellClick);
       rendererInitialized = true;
+    }
+  }
+
+  function ensure3DRenderer() {
+    if (!renderer3dInitialized) {
+      Torus3DRenderer.init(document.body, handleCellClick);
+      renderer3dInitialized = true;
+    }
+  }
+
+  function showActiveRenderer() {
+    if (activeView === '3d') {
+      ensure3DRenderer();
+      if (rendererInitialized) TorusRenderer.hide();
+      Torus3DRenderer.updatePieces(game.board);
+      Torus3DRenderer.show();
+    } else {
+      ensureRenderer();
+      if (renderer3dInitialized) Torus3DRenderer.hide();
+      TorusRenderer.updatePieces(game.board);
+      TorusRenderer.show();
     }
   }
 
@@ -219,9 +270,9 @@
       game.reset();
       selected = null;
       legalTargets = [];
-      TorusRenderer.clearHighlights();
-      TorusRenderer.clearLastMove();
-      TorusRenderer.updatePieces(game.board);
+      V.clearHighlights();
+      V.clearLastMove();
+      V.updatePieces(game.board);
       if (moveLogEl) moveLogEl.innerHTML = '';
       updateUI();
     });
@@ -240,13 +291,13 @@
       if (undone > 0) {
         selected = null;
         legalTargets = [];
-        TorusRenderer.clearHighlights();
-        TorusRenderer.clearLastMove();
-        TorusRenderer.updatePieces(game.board);
+        V.clearHighlights();
+        V.clearLastMove();
+        V.updatePieces(game.board);
         updateUI();
         if (game.isCheck()) {
           const kp = findCurrentKing();
-          if (kp) TorusRenderer.highlightCheck(...kp);
+          if (kp) V.highlightCheck(...kp);
         }
       }
     });
@@ -284,6 +335,27 @@
     });
   }
 
+  // ── View toggle (2D flat ↔ 3D torus) ──────────────────────────
+
+  const torusViewSelect = document.getElementById('torus-view-select');
+  if (torusViewSelect) {
+    torusViewSelect.addEventListener('change', (e) => {
+      activeView = e.target.value;
+      showActiveRenderer();
+
+      // Restore highlights in the new view
+      V.clearHighlights();
+      if (selected) {
+        V.highlightCells([[selected[0], selected[1]]], 'selected');
+        V.highlightCells(legalTargets, 'move');
+      }
+      if (game.isCheck() && !game.gameOver) {
+        const kp = findCurrentKing();
+        if (kp) V.highlightCheck(...kp);
+      }
+    });
+  }
+
   // ── Game mode ────────────────────────────────────────────────
 
   window.setTorusGameMode = function (mode) {
@@ -300,10 +372,9 @@
       ai = new window.TorusAIModule.TorusAI('b', depth);
     }
 
-    TorusRenderer.clearHighlights();
-    TorusRenderer.clearLastMove();
-    TorusRenderer.updatePieces(game.board);
-    TorusRenderer.show();
+    V.clearHighlights();
+    V.clearLastMove();
+    showActiveRenderer();
     if (moveLogEl) moveLogEl.innerHTML = '';
     updateUI();
   };
@@ -311,5 +382,6 @@
   // Hide renderer when leaving torus game view
   window.hideTorusRenderer = function () {
     if (rendererInitialized) TorusRenderer.hide();
+    if (renderer3dInitialized) Torus3DRenderer.hide();
   };
 })();
