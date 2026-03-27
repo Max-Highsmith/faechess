@@ -86,6 +86,8 @@ router.post('/', requireAuth, async (req, res) => {
     const userId = req.user.id;
     const invite_code = generateInviteCode();
     const board_state = initialBoard();
+    const timeControl = [3, 5, 10, 15].includes(req.body.time_control) ? req.body.time_control : 0;
+    const timeMsTotal = timeControl > 0 ? timeControl * 60 * 1000 : null;
 
     const row = {
       white_player_id: color === 'white' ? userId : null,
@@ -94,7 +96,10 @@ router.post('/', requireAuth, async (req, res) => {
       current_turn: 'w',
       board_state,
       move_count: 0,
-      invite_code
+      invite_code,
+      time_control: timeControl,
+      white_time_remaining: timeMsTotal,
+      black_time_remaining: timeMsTotal
     };
 
     const { data, error } = await supabase
@@ -111,6 +116,7 @@ router.post('/', requireAuth, async (req, res) => {
       game_id: data.id,
       invite_code: data.invite_code,
       color: color === 'white' ? 'w' : 'b',
+      time_control: timeControl,
       players
     });
   } catch (error) {
@@ -143,10 +149,23 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
     if (game.white_player_id === userId || game.black_player_id === userId) {
       const myColor = game.white_player_id === userId ? 'w' : 'b';
       const players = await fetchPlayerProfiles([game.white_player_id, game.black_player_id]);
+
+      // Compute live time remaining for reconnect
+      let whiteTimeRemaining = game.white_time_remaining;
+      let blackTimeRemaining = game.black_time_remaining;
+      if (game.time_control > 0 && game.status === 'active' && game.last_move_at) {
+        const elapsed = Date.now() - new Date(game.last_move_at).getTime();
+        if (game.current_turn === 'w') whiteTimeRemaining = Math.max(0, whiteTimeRemaining - elapsed);
+        else blackTimeRemaining = Math.max(0, blackTimeRemaining - elapsed);
+      }
+
       return res.json({
         game_id: game.id,
         color: myColor,
         status: game.status,
+        time_control: game.time_control || 0,
+        white_time_remaining: whiteTimeRemaining,
+        black_time_remaining: blackTimeRemaining,
         players
       });
     }
@@ -157,7 +176,10 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
     }
 
     // Fill the empty slot
-    const updates = { status: 'active' };
+    const updates = {
+      status: 'active',
+      last_move_at: game.time_control > 0 ? new Date().toISOString() : null
+    };
     let joinerColor;
     if (!game.white_player_id) {
       updates.white_player_id = userId;
@@ -182,6 +204,9 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
       game_id: updated.id,
       color: joinerColor,
       status: updated.status,
+      time_control: updated.time_control || 0,
+      white_time_remaining: updated.white_time_remaining,
+      black_time_remaining: updated.black_time_remaining,
       players
     });
   } catch (error) {
@@ -220,6 +245,13 @@ router.get('/:id', requireAuth, async (req, res) => {
 
     const myColor = game.white_player_id === userId ? 'w' : 'b';
     const players = await fetchPlayerProfiles([game.white_player_id, game.black_player_id]);
+
+    // Compute live time remaining
+    if (game.time_control > 0 && game.status === 'active' && game.last_move_at) {
+      const elapsed = Date.now() - new Date(game.last_move_at).getTime();
+      if (game.current_turn === 'w') game.white_time_remaining = Math.max(0, game.white_time_remaining - elapsed);
+      else game.black_time_remaining = Math.max(0, game.black_time_remaining - elapsed);
+    }
 
     res.json({
       ...game,
@@ -269,6 +301,41 @@ router.post('/:id/move', requireAuth, async (req, res) => {
     // Check turn
     if (game.current_turn !== playerColor) {
       return res.status(400).json({ error: 'Not your turn' });
+    }
+
+    // Enforce chess clock
+    if (game.time_control > 0 && game.last_move_at) {
+      const now = Date.now();
+      const elapsed = now - new Date(game.last_move_at).getTime();
+      const timeField = playerColor === 'w' ? 'white_time_remaining' : 'black_time_remaining';
+      const remaining = game[timeField] - elapsed;
+
+      if (remaining <= 0) {
+        const result = playerColor === 'w' ? 'black_wins' : 'white_wins';
+        await supabase.from('games').update({
+          status: 'completed',
+          result,
+          completed_at: new Date().toISOString(),
+          [timeField]: 0
+        }).eq('id', game.id);
+
+        let elo_changes = null;
+        if (game.white_player_id && game.black_player_id) {
+          try {
+            elo_changes = await updateEloRatings(game.id, game.white_player_id, game.black_player_id, result);
+          } catch (e) { console.error('Elo update error:', e); }
+        }
+
+        return res.status(400).json({
+          error: 'Time expired',
+          game_over: true,
+          result,
+          elo_changes
+        });
+      }
+
+      // Deduct elapsed time
+      game[timeField] = remaining;
     }
 
     // Validate move using shared game logic
@@ -338,6 +405,11 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       current_turn: nextTurn,
       move_count: newMoveCount
     };
+    if (game.time_control > 0) {
+      gameUpdates.white_time_remaining = game.white_time_remaining;
+      gameUpdates.black_time_remaining = game.black_time_remaining;
+      gameUpdates.last_move_at = new Date().toISOString();
+    }
     if (gameOver) {
       gameUpdates.status = 'completed';
       gameUpdates.result = result;
@@ -373,7 +445,9 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       current_turn: nextTurn,
       game_over: gameOver,
       result,
-      elo_changes
+      elo_changes,
+      white_time_remaining: game.white_time_remaining,
+      black_time_remaining: game.black_time_remaining
     };
 
     res.json({ success: true, ...payload });

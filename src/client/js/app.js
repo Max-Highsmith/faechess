@@ -11,6 +11,7 @@ import * as TutorialModule from './tutorial.js';
 import * as MultiplayerModule from './multiplayer.js';
 import * as TorusGameModule from './torus-game.js';
 import * as TorusAIModule from './torus-ai.js';
+import * as ChessClockModule from './chess-clock.js';
 import { initAuth, getCurrentUser, getAuthToken, isAuthenticated } from './auth.js';
 import { initNavigation, startOnlineGame, showOnlineSetup } from './navigation.js';
 import { initProfileSetup } from './profile.js';
@@ -27,6 +28,7 @@ window.Tutorials = TutorialModule;
 window.Multiplayer = MultiplayerModule;
 window.TorusGameModule = TorusGameModule;
 window.TorusAIModule = TorusAIModule;
+window.ChessClock = ChessClockModule;
 
 // Initialize authentication
 initAuth();
@@ -47,7 +49,8 @@ setupOnlineHandlers();
 Promise.all([
   /* @vite-ignore */ import('./render.js'),
   /* @vite-ignore */ import('./flat-render.js'),
-  /* @vite-ignore */ import('./torus-render.js')
+  /* @vite-ignore */ import('./torus-render.js'),
+  /* @vite-ignore */ import('./torus-3d-render.js')
 ]).then(() => {
   // Now load main.js, analyzer.js, and torus-main.js which depend on the render files
   Promise.all([
@@ -112,6 +115,17 @@ function setupOnlineHandlers() {
     });
   });
 
+  // Time control picker (online setup)
+  const timeBtns = document.querySelectorAll('.time-btn');
+  let selectedTimeControl = 5;
+  timeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      timeBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedTimeControl = parseInt(btn.dataset.minutes, 10);
+    });
+  });
+
   // Create game
   const btnCreate = document.getElementById('btn-create-game');
   if (btnCreate) {
@@ -119,7 +133,7 @@ function setupOnlineHandlers() {
       try {
         btnCreate.disabled = true;
         btnCreate.textContent = 'Creating...';
-        const data = await MultiplayerModule.createGame(selectedColor);
+        const data = await MultiplayerModule.createGame(selectedColor, selectedTimeControl);
 
         // Show waiting panel, hide create panel
         document.getElementById('create-game-panel').classList.add('hidden');

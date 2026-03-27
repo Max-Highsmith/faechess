@@ -227,10 +227,24 @@
 
             updateUI();
 
+            // Switch chess clock
+            if (ChessClock.isEnabled()) {
+              if (game.gameOver) ChessClock.pause();
+              else ChessClock.switchTurn(game.turn);
+            }
+
             if (multiplayerEnabled) {
               Multiplayer.submitMove(from, [x, y, z]).then(data => {
-                if (data && data.game_over && data.elo_changes) {
-                  showGameOverModal(game.result, data.elo_changes);
+                // Sync server clock times
+                if (data && ChessClock.isEnabled() && data.white_time_remaining != null) {
+                  ChessClock.setTimeRemaining('w', data.white_time_remaining);
+                  ChessClock.setTimeRemaining('b', data.black_time_remaining);
+                }
+                if (data && data.game_over) {
+                  ChessClock.pause();
+                  if (data.elo_changes) {
+                    showGameOverModal(game.result, data.elo_changes);
+                  }
                 }
               }).catch(err => {
                 console.error('Move rejected by server:', err);
@@ -239,6 +253,8 @@
                 ViewProxy.clearHighlights();
                 ViewProxy.updatePieces(game.board);
                 updateUI();
+                // Revert clock switch
+                if (ChessClock.isEnabled()) ChessClock.switchTurn(game.turn);
                 statusEl.textContent = 'Move rejected — try again';
                 statusEl.style.color = '#ff6b6b';
               });
@@ -321,6 +337,16 @@
       if (kp) ViewProxy.highlightCheck(...kp);
     }
 
+    // Sync clock from server
+    if (ChessClock.isEnabled()) {
+      if (payload.white_time_remaining != null) {
+        ChessClock.setTimeRemaining('w', payload.white_time_remaining);
+        ChessClock.setTimeRemaining('b', payload.black_time_remaining);
+      }
+      if (payload.game_over) ChessClock.pause();
+      else ChessClock.switchTurn(game.turn);
+    }
+
     updateUI();
 
     if (payload.game_over) {
@@ -347,6 +373,7 @@
       game.gameOver = true;
       const winner = payload.color === 'w' ? 'Black' : 'White';
       game.result = `${winner} wins by resignation!`;
+      if (ChessClock.isEnabled()) ChessClock.pause();
       updateUI();
       showGameOverModal(game.result, payload.elo_changes);
     }
@@ -425,6 +452,12 @@
         if (game.isCheck() && !game.gameOver) {
           const kp = findCurrentKing();
           if (kp) ViewProxy.highlightCheck(...kp);
+        }
+
+        // Switch clock back to player after AI move
+        if (ChessClock.isEnabled()) {
+          if (game.gameOver) ChessClock.pause();
+          else ChessClock.switchTurn(game.turn);
         }
 
         updateUI();
@@ -943,6 +976,26 @@
     ViewProxy.clearLastMove();
     ViewProxy.updatePieces(game.board);
     moveLogEl.innerHTML = '';
+
+    // Reset clock with current time control
+    if (!multiplayerEnabled) {
+      const minutes = parseInt(document.getElementById('time-control-select').value, 10);
+      ChessClock.destroy();
+      ChessClock.init();
+      ChessClock.setOnTimeout((color) => {
+        if (game.gameOver) return;
+        const winner = color === 'w' ? 'Black' : 'White';
+        game.gameOver = true;
+        game.result = `${winner} wins on time!`;
+        ChessClock.pause();
+        updateUI();
+      });
+      if (minutes > 0) {
+        ChessClock.setTimeControl(minutes);
+        ChessClock.start('w');
+      }
+    }
+
     updateUI();
   });
 
@@ -998,6 +1051,7 @@
     if (!confirm(`${loser} surrenders. ${winner} wins. Are you sure?`)) return;
     game.gameOver = true;
     game.result = `${winner} wins by resignation!`;
+    if (ChessClock.isEnabled()) ChessClock.pause();
     updateUI();
   });
 
@@ -1101,6 +1155,29 @@
     aiEnabled = false;
     multiplayerEnabled = false;
 
+    // Reset chess clock
+    ChessClock.destroy();
+    ChessClock.init();
+    ChessClock.setOnTimeout((color) => {
+      if (game.gameOver) return;
+      const winner = color === 'w' ? 'Black' : 'White';
+      game.gameOver = true;
+      game.result = `${winner} wins on time!`;
+      ChessClock.pause();
+      updateUI();
+      if (multiplayerEnabled) {
+        showGameOverModal(game.result, null);
+      }
+    });
+
+    if (mode === 'pvp' || mode === 'pvai') {
+      const minutes = parseInt(document.getElementById('time-control-select').value, 10);
+      if (minutes > 0) {
+        ChessClock.setTimeControl(minutes);
+        ChessClock.start('w');
+      }
+    }
+
     if (mode === 'pvai') {
       aiEnabled = true;
       ai = new ChessAI.AI('b', parseInt(document.getElementById('ai-difficulty').value, 10));
@@ -1116,6 +1193,16 @@
         const colorName = ag.myColor === 'w' ? 'White' : 'Black';
         const badge = document.getElementById('mp-color-badge');
         if (badge) badge.textContent = colorName;
+
+        // Initialize clock from server time control
+        if (ag.timeControl && ag.timeControl > 0) {
+          ChessClock.setTimeControl(ag.timeControl);
+          if (ag.whiteTimeRemaining != null) {
+            ChessClock.setTimeRemaining('w', ag.whiteTimeRemaining);
+            ChessClock.setTimeRemaining('b', ag.blackTimeRemaining);
+          }
+          ChessClock.start(game.turn);
+        }
       }
 
       // Display player profiles

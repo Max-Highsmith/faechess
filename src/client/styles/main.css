@@ -551,6 +551,36 @@ canvas { display: block; }
 #game-view.mode-tutorial .mode-tutorial { display: block; }
 #game-view.mode-online .mode-online { display: block; }
 #game-view.mode-online .mode-game { display: block; }
+#game-view.mode-online .mode-local-clock { display: none; }
+
+/* ===================================
+   CHESS CLOCK
+   =================================== */
+
+#chess-clock { margin-bottom: 12px; }
+.clock-row { display: flex; gap: 8px; }
+.clock-player {
+  flex: 1; background: #16213e; border: 1px solid #333;
+  border-radius: 6px; padding: 8px; text-align: center;
+}
+.clock-player.active { border-color: #7fdbca; background: #1a2e3e; }
+.clock-player.low-time .clock-time { color: #f7c948; }
+.clock-player.timeout { border-color: #ff6b6b; background: #3e1a1a; }
+.clock-player.timeout .clock-time { color: #ff6b6b; }
+.clock-label { display: block; font-size: 0.7em; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+.clock-time { display: block; font-size: 1.4em; font-weight: bold; color: #eee; font-family: 'Courier New', monospace; }
+.clock-player.active .clock-time { color: #7fdbca; }
+
+/* Time Control Picker (online setup) */
+.time-control-picker { margin-bottom: 1rem; }
+.time-control-picker label { font-size: 0.85em; color: #888; display: block; margin-bottom: 0.5rem; }
+.time-control-options { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.time-btn {
+  flex: 1; min-width: 55px; padding: 0.5rem; background: #16213e; color: #ccc; border: 1px solid #444;
+  border-radius: 4px; cursor: pointer; font-size: 0.85em; transition: all 0.15s; text-align: center;
+}
+.time-btn:hover { background: #1a1a5e; }
+.time-btn.selected { background: #1a3e5e; border-color: #7fdbca; color: #7fdbca; }
 
 /* ===================================
    ANALYZER VIEW

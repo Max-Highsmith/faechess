@@ -217,6 +217,16 @@
             <button class="color-btn" data-color="black">Play as Black</button>
             <button class="color-btn" data-color="random">Random</button>
           </div>
+          <div class="time-control-picker">
+            <label>Time Control:</label>
+            <div class="time-control-options">
+              <button class="time-btn" data-minutes="3">3 min</button>
+              <button class="time-btn selected" data-minutes="5">5 min</button>
+              <button class="time-btn" data-minutes="10">10 min</button>
+              <button class="time-btn" data-minutes="15">15 min</button>
+              <button class="time-btn" data-minutes="0">No Clock</button>
+            </div>
+          </div>
           <button id="btn-create-game" class="primary-btn">Create Game</button>
         </div>
 
@@ -313,6 +323,19 @@
       </div>
     </div>
 
+    <div id="chess-clock" class="mode-game mode-online" style="display:none;">
+      <div class="clock-row">
+        <div class="clock-player" id="clock-black">
+          <span class="clock-label">Black</span>
+          <span class="clock-time" id="clock-black-time">--:--</span>
+        </div>
+        <div class="clock-player" id="clock-white">
+          <span class="clock-label">White</span>
+          <span class="clock-time" id="clock-white-time">--:--</span>
+        </div>
+      </div>
+    </div>
+
     <div class="mode-game mode-puzzles mode-tutorial mode-online">
       <div id="turn">White to move</div>
       <div id="status"></div>
@@ -332,6 +355,16 @@
         <button id="btn-undo">Undo</button>
         <button id="btn-surrender">Surrender</button>
         <button id="btn-export">Export Game</button>
+      </div>
+      <div class="ctrl-row mode-game mode-local-clock">
+        <label>Clock:</label>
+        <select id="time-control-select">
+          <option value="0">No Clock</option>
+          <option value="3">3 min</option>
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15">15 min</option>
+        </select>
       </div>
       <div class="ctrl-row">
         <label>Style:</label>
@@ -518,6 +551,13 @@
             <option value="1">Easy</option>
             <option value="2" selected>Medium</option>
             <option value="3">Hard</option>
+          </select>
+        </div>
+        <div class="ctrl-row mode-torus-game">
+          <label>View:</label>
+          <select id="torus-view-select">
+            <option value="2d">2D Flat Board</option>
+            <option value="3d">3D Torus</option>
           </select>
         </div>
       </div>

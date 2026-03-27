@@ -73,12 +73,12 @@ function subscribeToGame(gameId) {
  * @param {string} color – 'white', 'black', or 'random'
  * @returns {{ game_id, invite_code, color }}
  */
-export async function createGame(color) {
+export async function createGame(color, timeControl = 0) {
   const headers = await authHeaders();
   const res = await fetch('/api/games', {
     method: 'POST',
     headers,
-    body: JSON.stringify({ color })
+    body: JSON.stringify({ color, time_control: timeControl })
   });
 
   if (!res.ok) {
@@ -91,7 +91,8 @@ export async function createGame(color) {
     id: data.game_id,
     invite_code: data.invite_code,
     myColor: data.color,
-    status: 'waiting'
+    status: 'waiting',
+    timeControl: data.time_control || 0
   };
 
   if (data.players) {
@@ -123,7 +124,10 @@ export async function joinGame(inviteCode) {
     id: data.game_id,
     invite_code: inviteCode,
     myColor: data.color,
-    status: data.status
+    status: data.status,
+    timeControl: data.time_control || 0,
+    whiteTimeRemaining: data.white_time_remaining,
+    blackTimeRemaining: data.black_time_remaining
   };
 
   if (data.players) {
@@ -168,7 +172,10 @@ export async function loadGame(gameId) {
     id: data.id,
     invite_code: data.invite_code,
     myColor: data.my_color,
-    status: data.status
+    status: data.status,
+    timeControl: data.time_control || 0,
+    whiteTimeRemaining: data.white_time_remaining,
+    blackTimeRemaining: data.black_time_remaining
   };
 
   if (data.players) {
