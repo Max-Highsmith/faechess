@@ -95,7 +95,7 @@ export const WHITE_BACK_RANK = 1;
 export const BLACK_BACK_RANK = 5;
 
 // Pawn direction: front pawns move toward enemy, rear pawns move away (wrapping)
-function pawnDirection(color, y) {
+export function pawnDirection(color, y) {
   if (color === 'w') {
     // White back rank at y=1. Rear pawns at y=0 or y=7 move -1 (wrapping toward enemy).
     return (y === 0 || y === 7) ? -1 : 1;

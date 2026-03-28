@@ -35,7 +35,7 @@ function allLegalMoves(board, color) {
   return moves;
 }
 
-function minimax(board, depth, alpha, beta, maximizing, aiColor, isRoot = false) {
+function minimax(board, depth, alpha, beta, maximizing, aiColor) {
   const currentColor = maximizing ? aiColor : (aiColor === 'w' ? 'b' : 'w');
   const moves = allLegalMoves(board, currentColor);
 
@@ -48,7 +48,7 @@ function minimax(board, depth, alpha, beta, maximizing, aiColor, isRoot = false)
         score = 0;
       }
     }
-    return { score, move: null, topMoves: null };
+    return { score, move: null };
   }
 
   // Move ordering: captures and checks first
@@ -86,7 +86,7 @@ function minimax(board, depth, alpha, beta, maximizing, aiColor, isRoot = false)
       beta = Math.min(beta, score);
       if (beta <= alpha) break;
     }
-    return { score: minEval, move: bestMove, topMoves: null };
+    return { score: minEval, move: bestMove };
   }
 }
 
@@ -109,9 +109,8 @@ export class AI {
   }
 
   getBestMove(board) {
-    const result = minimax(board, this.depth, -Infinity, Infinity, true, this.color, true);
-    const top = result.topMoves.slice(0, 3);
-    return top[Math.floor(Math.random() * top.length)].move;
+    const result = minimax(board, this.depth, -Infinity, Infinity, true, this.color);
+    return result.move;
   }
 }
 

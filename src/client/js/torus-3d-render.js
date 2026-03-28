@@ -55,6 +55,17 @@ const Torus3DRenderer = (() => {
     return torusNormal(x + 0.5, y + 0.5);
   }
 
+  // tangent along theta direction (rank direction, for pawn arrows)
+  function torusTangentTheta(fileF, rankF) {
+    const phi = (fileF / COLS) * Math.PI * 2;
+    const theta = (rankF / ROWS) * Math.PI * 2;
+    const tx = -r * Math.sin(theta) * Math.cos(phi);
+    const ty = r * Math.cos(theta);
+    const tz = -r * Math.sin(theta) * Math.sin(phi);
+    const len = Math.sqrt(tx * tx + ty * ty + tz * tz);
+    return new THREE.Vector3(tx / len, ty / len, tz / len);
+  }
+
   // tangent along phi direction (for orienting pieces)
   function torusTangentPhi(fileF, rankF) {
     const phi = (fileF / COLS) * Math.PI * 2;
@@ -230,6 +241,13 @@ const Torus3DRenderer = (() => {
         const ballGeo = new THREE.SphereGeometry(0.1, 8, 8);
         const ballMat = new THREE.MeshPhongMaterial({ color: isWhite ? 0xf0e6d0 : 0x2a2a2a });
         const ball = new THREE.Mesh(ballGeo, ballMat); ball.position.y = 0.6; group.add(ball);
+        // Directional arrow (cone pointing along local +Z)
+        const arrowGeo = new THREE.ConeGeometry(0.07, 0.2, 6);
+        const arrowMat = new THREE.MeshPhongMaterial({ color: isWhite ? 0xd4af37 : 0x7777cc });
+        const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+        arrow.rotation.x = -Math.PI / 2; // point along +Z
+        arrow.position.set(0, 0.28, 0.25);
+        group.add(arrow);
         break;
       default:
         bodyGeo = new THREE.CylinderGeometry(0.15, 0.25, 0.5, 16);
@@ -254,7 +272,7 @@ const Torus3DRenderer = (() => {
 
   // ── Place piece on torus surface ────────────────────────────────
 
-  function placePiece(group, x, y) {
+  function placePiece(group, x, y, pawnDir) {
     const c = cellCenter(x, y);
     const n = cellNormal(x, y);
 
@@ -264,6 +282,21 @@ const Torus3DRenderer = (() => {
     const up = new THREE.Vector3(0, 1, 0);
     const quat = new THREE.Quaternion().setFromUnitVectors(up, n);
     group.quaternion.copy(quat);
+
+    // For pawns, rotate around normal so local +Z aligns with movement direction
+    if (pawnDir !== undefined) {
+      const thetaTan = torusTangentTheta(x + 0.5, y + 0.5);
+      const moveDir = thetaTan.clone().multiplyScalar(pawnDir);
+      // Transform moveDir into the group's local frame
+      const invQuat = quat.clone().invert();
+      const localDir = moveDir.clone().applyQuaternion(invQuat);
+      // Rotate around local Y (surface normal) to align local +Z with moveDir
+      const angle = Math.atan2(localDir.x, localDir.z);
+      const extraRot = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 1, 0), angle
+      );
+      group.quaternion.multiply(extraRot);
+    }
 
     // Offset piece up along normal so base sits on surface
     group.position.addScaledVector(n, 0.02);
@@ -358,7 +391,10 @@ const Torus3DRenderer = (() => {
       const piece = board[k];
       const mesh = createPieceMesh(piece);
       mesh.scale.setScalar(scale);
-      placePiece(mesh, x, y);
+      const pawnDir = piece.type === 'P'
+        ? window.TorusGameModule.pawnDirection(piece.color, y)
+        : undefined;
+      placePiece(mesh, x, y, pawnDir);
 
       mesh.traverse(child => {
         if (child.isMesh) {

@@ -252,6 +252,33 @@ const TorusRenderer = (() => {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(sym, px + cellPx / 2, py + cellPx / 2 + 1);
+
+      // Draw directional arrow on pawns
+      if (piece.type === 'P') {
+        const dir = window.TorusGameModule.pawnDirection(piece.color, y);
+        const cx = px + cellPx / 2;
+        const cy = py + cellPx / 2;
+        const arrowSize = cellPx * 0.10;
+        const arrowOffset = cellPx * 0.30;
+
+        ctx.fillStyle = piece.color === 'w' ? '#d4af37' : '#8888dd';
+        ctx.beginPath();
+        if (dir === 1) {
+          // Moving to higher y = up on screen
+          const tipY = cy - arrowOffset;
+          ctx.moveTo(cx, tipY - arrowSize);
+          ctx.lineTo(cx - arrowSize * 0.9, tipY + arrowSize * 0.5);
+          ctx.lineTo(cx + arrowSize * 0.9, tipY + arrowSize * 0.5);
+        } else {
+          // Moving to lower y = down on screen
+          const tipY = cy + arrowOffset;
+          ctx.moveTo(cx, tipY + arrowSize);
+          ctx.lineTo(cx - arrowSize * 0.9, tipY - arrowSize * 0.5);
+          ctx.lineTo(cx + arrowSize * 0.9, tipY - arrowSize * 0.5);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
     }
 
     // File labels (a-h) along bottom

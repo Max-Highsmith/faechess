@@ -1143,6 +1143,10 @@
   // ── Game mode ────────────────────────────────────────────────
 
   window.setGameMode = function (mode) {
+    // Re-show the active renderer (hideAll hides it during view transitions)
+    if (activeView === '3d') BoardRenderer.show();
+    else if (flatInitialized) FlatRenderer.show();
+
     // Reset game state
     game.reset();
     selected = null;
