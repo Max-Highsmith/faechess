@@ -114,11 +114,11 @@
           <p class="game-desc">5×5×5 three-dimensional chess with unicorns</p>
         </button>
 
-        <button class="game-card disabled" id="play-5-board">
+        <button class="game-card" id="play-5-board">
           <div class="game-icon">🎲</div>
           <h2>5 Board</h2>
-          <p>Coming Soon</p>
-          <p class="game-desc">Play across five interconnected boards</p>
+          <p>Multi-Board Strategy</p>
+          <p class="game-desc">5 simultaneous chess boards – highest score wins</p>
         </button>
 
         <button class="game-card" id="play-torus">
@@ -512,6 +512,18 @@
           <p>Single Player</p>
           <p class="game-desc">Challenge the minimax engine</p>
         </button>
+        <button class="game-card" id="torus-mode-puzzles">
+          <div class="game-icon">&#129513;</div>
+          <h2>Puzzles</h2>
+          <p>Train Your Skills</p>
+          <p class="game-desc">Find the best move on the torus</p>
+        </button>
+        <button class="game-card" id="torus-mode-online">
+          <div class="game-icon">&#127760;</div>
+          <h2>Online</h2>
+          <p>Play a Friend</p>
+          <p class="game-desc">Create a game and share the invite link</p>
+        </button>
       </div>
     </div>
   </div>
@@ -525,7 +537,18 @@
         <h2>8&times;8 Wraparound</h2>
       </div>
 
-      <div class="mode-torus-game">
+      <div id="torus-chess-clock" class="clock-row" style="display:none">
+        <div class="clock-player" id="torus-clock-white">
+          <span class="clock-label">White</span>
+          <span class="clock-time" id="torus-clock-white-time">--:--</span>
+        </div>
+        <div class="clock-player" id="torus-clock-black">
+          <span class="clock-label">Black</span>
+          <span class="clock-time" id="torus-clock-black-time">--:--</span>
+        </div>
+      </div>
+
+      <div>
         <div id="torus-turn">White to move</div>
         <div id="torus-status"></div>
       </div>
@@ -553,7 +576,7 @@
             <option value="3">Hard</option>
           </select>
         </div>
-        <div class="ctrl-row mode-torus-game">
+        <div class="ctrl-row">
           <label>View:</label>
           <select id="torus-view-select">
             <option value="2d">2D Flat Board</option>
@@ -562,12 +585,124 @@
         </div>
       </div>
 
+      <div id="torus-puzzle-section" class="mode-torus-puzzles">
+        <h3>Puzzles</h3>
+        <div id="torus-puzzle-status"></div>
+        <div id="torus-puzzle-controls" style="display:none; margin-bottom:6px;">
+          <button id="torus-btn-hint">Hint</button>
+          <button id="torus-btn-exit-puzzle">Back to List</button>
+        </div>
+        <div id="torus-puzzle-list"></div>
+      </div>
+
       <div id="torus-move-log" class="mode-torus-game"></div>
     </div>
   </div>
 
   <!-- Torus Pawn Promotion Modal -->
   <div id="torus-promotion-modal" class="hidden">
+    <div class="promotion-content">
+      <p class="promotion-title">Promote pawn to:</p>
+      <div class="promotion-choices">
+        <button class="promotion-btn" data-piece="Q"><span class="promotion-icon">&#9813;</span><span>Queen</span></button>
+        <button class="promotion-btn" data-piece="R"><span class="promotion-icon">&#9814;</span><span>Rook</span></button>
+        <button class="promotion-btn" data-piece="B"><span class="promotion-icon">&#9815;</span><span>Bishop</span></button>
+        <button class="promotion-btn" data-piece="N"><span class="promotion-icon">&#9816;</span><span>Knight</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Five-Board Mode Select Screen -->
+  <div id="five-board-mode-select" class="hidden">
+    <div class="landing-container">
+      <button id="fb-mode-back" class="back-btn">&larr; Back to Menu</button>
+      <h1 class="landing-title">5 Board Chess</h1>
+      <p class="landing-subtitle">Play 5 boards at once &mdash; highest score wins</p>
+      <div class="fb-scoring-info">
+        <span class="fb-score-chip">Board 1: +1</span>
+        <span class="fb-score-chip">Board 2: +2</span>
+        <span class="fb-score-chip fb-center">Board 3: +3</span>
+        <span class="fb-score-chip">Board 4: +2</span>
+        <span class="fb-score-chip">Board 5: +1</span>
+      </div>
+      <div class="game-grid">
+        <button class="game-card" id="fb-mode-pvp">
+          <div class="game-icon">&#9876;&#65039;</div>
+          <h2>Player vs Player</h2>
+          <p>Local Multiplayer</p>
+          <p class="game-desc">Two players on the same device</p>
+        </button>
+        <button class="game-card" id="fb-mode-pvai">
+          <div class="game-icon">&#129302;</div>
+          <h2>Player vs AI</h2>
+          <p>Single Player</p>
+          <p class="game-desc">Challenge the AI across 5 boards</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Five-Board Game View -->
+  <div id="five-board-game-view" class="hidden">
+    <div id="fb-ui">
+      <div class="game-header">
+        <button id="fb-back-to-menu" class="back-btn">&larr; Back to Menu</button>
+        <h1>5 Board Chess</h1>
+        <h2 id="fb-score">White: 0 pts | Black: 0 pts</h2>
+      </div>
+
+      <div class="mode-fb-game">
+        <div id="fb-turn">White to move</div>
+        <div id="fb-status"></div>
+      </div>
+
+      <div id="fb-clock" class="mode-fb-game" style="display:none;">
+        <div class="clock-row">
+          <div class="clock-player" id="fb-clock-black">
+            <span class="clock-label">Black</span>
+            <span class="clock-time" id="fb-clock-black-time">--:--</span>
+          </div>
+          <div class="clock-player" id="fb-clock-white">
+            <span class="clock-label">White</span>
+            <span class="clock-time" id="fb-clock-white-time">--:--</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="fb-controls">
+        <div class="mode-fb-game">
+          <button id="fb-btn-reset">New Game</button>
+          <button id="fb-btn-undo">Undo</button>
+          <button id="fb-btn-concede">Concede Board</button>
+          <button id="fb-btn-surrender">Surrender</button>
+          <button id="fb-btn-export">Export Game</button>
+        </div>
+        <div class="ctrl-row mode-fb-game">
+          <label>Clock:</label>
+          <select id="fb-time-control-select">
+            <option value="0">No Clock</option>
+            <option value="3">3 min</option>
+            <option value="5" selected>5 min</option>
+            <option value="10">10 min</option>
+            <option value="15">15 min</option>
+          </select>
+        </div>
+        <div class="ctrl-row mode-fb-ai" id="fb-ai-difficulty-row">
+          <label>AI Level:</label>
+          <select id="fb-ai-difficulty">
+            <option value="1">Easy</option>
+            <option value="2" selected>Medium</option>
+            <option value="3">Hard</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="fb-move-log" class="mode-fb-game"></div>
+    </div>
+  </div>
+
+  <!-- Five-Board Pawn Promotion Modal -->
+  <div id="fb-promotion-modal" class="hidden">
     <div class="promotion-content">
       <p class="promotion-title">Promote pawn to:</p>
       <div class="promotion-choices">

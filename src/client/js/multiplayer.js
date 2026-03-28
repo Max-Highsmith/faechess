@@ -73,12 +73,12 @@ function subscribeToGame(gameId) {
  * @param {string} color – 'white', 'black', or 'random'
  * @returns {{ game_id, invite_code, color }}
  */
-export async function createGame(color, timeControl = 0) {
+export async function createGame(color, timeControl = 0, gameType = 'raumschach') {
   const headers = await authHeaders();
   const res = await fetch('/api/games', {
     method: 'POST',
     headers,
-    body: JSON.stringify({ color, time_control: timeControl })
+    body: JSON.stringify({ color, time_control: timeControl, game_type: gameType })
   });
 
   if (!res.ok) {
@@ -92,7 +92,8 @@ export async function createGame(color, timeControl = 0) {
     invite_code: data.invite_code,
     myColor: data.color,
     status: 'waiting',
-    timeControl: data.time_control || 0
+    timeControl: data.time_control || 0,
+    gameType: data.game_type || 'raumschach'
   };
 
   if (data.players) {
@@ -127,7 +128,8 @@ export async function joinGame(inviteCode) {
     status: data.status,
     timeControl: data.time_control || 0,
     whiteTimeRemaining: data.white_time_remaining,
-    blackTimeRemaining: data.black_time_remaining
+    blackTimeRemaining: data.black_time_remaining,
+    gameType: data.game_type || 'raumschach'
   };
 
   if (data.players) {
@@ -175,7 +177,8 @@ export async function loadGame(gameId) {
     status: data.status,
     timeControl: data.time_control || 0,
     whiteTimeRemaining: data.white_time_remaining,
-    blackTimeRemaining: data.black_time_remaining
+    blackTimeRemaining: data.black_time_remaining,
+    gameType: data.game_type || 'raumschach'
   };
 
   if (data.players) {
@@ -191,14 +194,16 @@ export async function loadGame(gameId) {
  * @param {number[]} from – [x,y,z]
  * @param {number[]} to   – [x,y,z]
  */
-export async function submitMove(from, to) {
+export async function submitMove(from, to, promoteTo) {
   if (!activeGame) throw new Error('No active game');
 
   const headers = await authHeaders();
+  const body = { from, to };
+  if (promoteTo) body.promoteTo = promoteTo;
   const res = await fetch(`/api/games/${activeGame.id}/move`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ from, to })
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {

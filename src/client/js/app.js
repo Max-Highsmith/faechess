@@ -11,9 +11,12 @@ import * as TutorialModule from './tutorial.js';
 import * as MultiplayerModule from './multiplayer.js';
 import * as TorusGameModule from './torus-game.js';
 import * as TorusAIModule from './torus-ai.js';
+import * as TorusPuzzlesModule from './torus-puzzles.js';
+import * as FiveBoardGameModule from './five-board-game.js';
+import * as FiveBoardAIModule from './five-board-ai.js';
 import * as ChessClockModule from './chess-clock.js';
 import { initAuth, getCurrentUser, getAuthToken, isAuthenticated } from './auth.js';
-import { initNavigation, startOnlineGame, showOnlineSetup } from './navigation.js';
+import { initNavigation, startOnlineGame, showOnlineSetup, startTorusOnlineGame } from './navigation.js';
 import { initProfileSetup } from './profile.js';
 
 // Make THREE and OrbitControls available globally for render.js
@@ -28,6 +31,9 @@ window.Tutorials = TutorialModule;
 window.Multiplayer = MultiplayerModule;
 window.TorusGameModule = TorusGameModule;
 window.TorusAIModule = TorusAIModule;
+window.TorusPuzzles = TorusPuzzlesModule;
+window.FiveBoardGameModule = FiveBoardGameModule;
+window.FiveBoardAIModule = FiveBoardAIModule;
 window.ChessClock = ChessClockModule;
 
 // Initialize authentication
@@ -50,13 +56,15 @@ Promise.all([
   /* @vite-ignore */ import('./render.js'),
   /* @vite-ignore */ import('./flat-render.js'),
   /* @vite-ignore */ import('./torus-render.js'),
-  /* @vite-ignore */ import('./torus-3d-render.js')
+  /* @vite-ignore */ import('./torus-3d-render.js'),
+  /* @vite-ignore */ import('./five-board-render.js')
 ]).then(() => {
-  // Now load main.js, analyzer.js, and torus-main.js which depend on the render files
+  // Now load main.js, analyzer.js, torus-main.js, and five-board-main.js which depend on the render files
   Promise.all([
     /* @vite-ignore */ import('./main.js'),
     /* @vite-ignore */ import('./analyzer.js'),
-    /* @vite-ignore */ import('./torus-main.js')
+    /* @vite-ignore */ import('./torus-main.js'),
+    /* @vite-ignore */ import('./five-board-main.js')
   ]).then(([mainModule, analyzerModule]) => {
     console.log('✅ All modules loaded successfully!');
 
@@ -101,6 +109,18 @@ function initMusicPlayer() {
 }
 
 /**
+ * Route to the correct game view based on game type.
+ */
+function routeOnlineGame() {
+  const ag = MultiplayerModule.getActiveGame();
+  if (ag && ag.gameType === 'torus') {
+    startTorusOnlineGame();
+  } else {
+    startOnlineGame();
+  }
+}
+
+/**
  * Set up create/join/copy handlers on the online-setup view
  */
 function setupOnlineHandlers() {
@@ -133,7 +153,8 @@ function setupOnlineHandlers() {
       try {
         btnCreate.disabled = true;
         btnCreate.textContent = 'Creating...';
-        const data = await MultiplayerModule.createGame(selectedColor, selectedTimeControl);
+        const gameType = window._pendingGameType || 'raumschach';
+        const data = await MultiplayerModule.createGame(selectedColor, selectedTimeControl, gameType);
 
         // Show waiting panel, hide create panel
         document.getElementById('create-game-panel').classList.add('hidden');
@@ -147,7 +168,7 @@ function setupOnlineHandlers() {
         // Listen for opponent joining
         MultiplayerModule.setCallbacks(null, (type, payload) => {
           if (type === 'player_joined') {
-            startOnlineGame();
+            routeOnlineGame();
           }
         });
       } catch (err) {
@@ -187,7 +208,7 @@ function setupOnlineHandlers() {
         btnJoin.disabled = true;
         btnJoin.textContent = 'Joining...';
         await MultiplayerModule.joinGame(code);
-        startOnlineGame();
+        routeOnlineGame();
       } catch (err) {
         alert('Failed to join game: ' + err.message);
       } finally {
@@ -225,7 +246,7 @@ function attemptPendingJoin() {
   sessionStorage.removeItem('pending-invite');
 
   MultiplayerModule.joinGame(inviteCode)
-    .then(() => startOnlineGame())
+    .then(() => routeOnlineGame())
     .catch(err => {
       alert('Failed to join game: ' + err.message);
       showOnlineSetup();

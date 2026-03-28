@@ -2,7 +2,7 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view', 'torus-mode-select', 'torus-game-view', 'federation-view'];
+const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view', 'torus-mode-select', 'torus-game-view', 'five-board-mode-select', 'five-board-game-view', 'federation-view'];
 
 function hideAll() {
   for (const id of allViews) {
@@ -11,6 +11,7 @@ function hideAll() {
   }
   // Hide renderers attached to document.body
   if (typeof window.hideTorusRenderer === 'function') window.hideTorusRenderer();
+  if (typeof window.hideFiveBoardRenderer === 'function') window.hideFiveBoardRenderer();
 }
 
 function showView(id) {
@@ -35,11 +36,31 @@ export function showTorusModeSelect() {
 export function startTorusGame(mode) {
   const gameView = document.getElementById('torus-game-view');
   if (!gameView) return;
-  gameView.classList.remove('mode-torus-pvp', 'mode-torus-pvai');
+  gameView.classList.remove('mode-torus-pvp', 'mode-torus-pvai', 'mode-torus-puzzles', 'mode-torus-online');
   gameView.classList.add('mode-' + mode);
   showView('torus-game-view');
   if (typeof window.setTorusGameMode === 'function') {
     window.setTorusGameMode(mode);
+  }
+}
+
+export function startTorusOnlineGame() {
+  startTorusGame('torus-online');
+}
+
+export function showFiveBoardModeSelect() {
+  if (typeof window.hideFiveBoardRenderer === 'function') window.hideFiveBoardRenderer();
+  showView('five-board-mode-select');
+}
+
+export function startFiveBoardGame(mode) {
+  const gameView = document.getElementById('five-board-game-view');
+  if (!gameView) return;
+  gameView.classList.remove('mode-fb-pvp', 'mode-fb-pvai', 'mode-fb-online');
+  gameView.classList.add('mode-' + mode);
+  showView('five-board-game-view');
+  if (typeof window.setFiveBoardGameMode === 'function') {
+    window.setFiveBoardGameMode(mode);
   }
 }
 
@@ -110,6 +131,7 @@ export function initNavigation() {
   const modeOnline = document.getElementById('mode-online');
   if (modeOnline) {
     modeOnline.addEventListener('click', () => {
+      window._pendingGameType = 'raumschach';
       import('./auth.js').then(({ isAuthenticated }) => {
         const authReq = document.getElementById('online-auth-required');
         const panels = document.getElementById('online-panels');
@@ -125,10 +147,18 @@ export function initNavigation() {
     });
   }
 
-  // Online setup back → mode select
+  // Online setup back → mode select (or torus mode select)
   const onlineBack = document.getElementById('online-back');
   if (onlineBack) {
-    onlineBack.addEventListener('click', () => showModeSelect());
+    onlineBack.addEventListener('click', () => {
+      if (window._pendingGameType === 'torus') {
+        window._pendingGameType = null;
+        showTorusModeSelect();
+      } else {
+        window._pendingGameType = null;
+        showModeSelect();
+      }
+    });
   }
 
   // Online auth login button
@@ -210,13 +240,10 @@ export function initNavigation() {
     leaderboardBack.addEventListener('click', () => showModeSelect());
   }
 
-  // Disabled game cards (5 Board only)
+  // Five-Board Chess card → five-board mode select
   const play5Board = document.getElementById('play-5-board');
   if (play5Board) {
-    play5Board.addEventListener('click', (e) => {
-      e.preventDefault();
-      alert('This game mode is coming soon! Stay tuned.');
-    });
+    play5Board.addEventListener('click', () => showFiveBoardModeSelect());
   }
 
   // Torus Chess card → torus mode select
@@ -232,7 +259,7 @@ export function initNavigation() {
   }
 
   // Torus mode cards → start torus game
-  const torusModes = ['torus-pvp', 'torus-pvai'];
+  const torusModes = ['torus-pvp', 'torus-pvai', 'torus-puzzles'];
   for (const mode of torusModes) {
     const btn = document.getElementById('torus-mode-' + mode.replace('torus-', ''));
     if (btn) {
@@ -240,12 +267,57 @@ export function initNavigation() {
     }
   }
 
+  // Torus online mode card → online setup (requires auth)
+  const torusModeOnline = document.getElementById('torus-mode-online');
+  if (torusModeOnline) {
+    torusModeOnline.addEventListener('click', () => {
+      window._pendingGameType = 'torus';
+      import('./auth.js').then(({ isAuthenticated }) => {
+        const authReq = document.getElementById('online-auth-required');
+        const panels = document.getElementById('online-panels');
+        if (isAuthenticated()) {
+          if (authReq) authReq.classList.add('hidden');
+          if (panels) panels.style.display = '';
+        } else {
+          if (authReq) authReq.classList.remove('hidden');
+          if (panels) panels.style.display = 'none';
+        }
+        showOnlineSetup();
+      });
+    });
+  }
+
   // Torus game view back → torus mode select
   const torusBackToMenu = document.getElementById('torus-back-to-menu');
   if (torusBackToMenu) {
     torusBackToMenu.addEventListener('click', () => {
+      if (window.Multiplayer) window.Multiplayer.cleanup();
       if (typeof window.hideTorusRenderer === 'function') window.hideTorusRenderer();
       showTorusModeSelect();
+    });
+  }
+
+  // Five-Board mode select back → landing
+  const fbModeBack = document.getElementById('fb-mode-back');
+  if (fbModeBack) {
+    fbModeBack.addEventListener('click', () => showLandingPage());
+  }
+
+  // Five-Board mode cards → start five-board game
+  const fbModes = ['fb-pvp', 'fb-pvai'];
+  for (const mode of fbModes) {
+    const btn = document.getElementById(mode.replace('fb-', 'fb-mode-'));
+    if (btn) {
+      btn.addEventListener('click', () => startFiveBoardGame(mode));
+    }
+  }
+
+  // Five-Board game view back → five-board mode select
+  const fbBackToMenu = document.getElementById('fb-back-to-menu');
+  if (fbBackToMenu) {
+    fbBackToMenu.addEventListener('click', () => {
+      if (typeof window.hideFiveBoardRenderer === 'function') window.hideFiveBoardRenderer();
+      showFiveBoardModeSelect();
     });
   }
 

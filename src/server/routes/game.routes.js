@@ -6,6 +6,12 @@ import {
   initialBoard, key, parseKey, legalMoves, applyMove,
   isInCheck, hasAnyLegalMove, coordToNotation
 } from '../../shared/game-logic.js';
+import {
+  initialBoard as torusInitialBoard, key as torusKey,
+  legalMoves as torusLegalMoves, applyMove as torusApplyMove,
+  isInCheck as torusIsInCheck, hasAnyLegalMove as torusHasAnyLegalMove,
+  coordToNotation as torusCoordToNotation
+} from '../../shared/torus-game-logic.js';
 import { calculateElo } from '../elo.js';
 
 const router = express.Router();
@@ -70,8 +76,30 @@ async function updateEloRatings(gameId, whitePlayerId, blackPlayerId, result) {
 }
 
 /**
+ * Compute en passant square for torus games from the last move.
+ */
+async function getTorusEnPassant(gameId, moveCount) {
+  if (moveCount === 0) return null;
+  const { data: lastMove } = await supabase
+    .from('game_moves')
+    .select('from_pos, to_pos, piece_type')
+    .eq('game_id', gameId)
+    .order('move_number', { ascending: false })
+    .limit(1)
+    .single();
+  if (lastMove && lastMove.piece_type === 'P') {
+    const lf = lastMove.from_pos.split(',').map(Number);
+    const lt = lastMove.to_pos.split(',').map(Number);
+    if (Math.abs(lt[1] - lf[1]) === 2) {
+      return [lf[0], (lf[1] + lt[1]) / 2];
+    }
+  }
+  return null;
+}
+
+/**
  * POST /api/games
- * Create a new game. Body: { color: 'white' | 'black' | 'random' }
+ * Create a new game. Body: { color, game_type, time_control }
  */
 router.post('/', requireAuth, async (req, res) => {
   try {
@@ -85,7 +113,8 @@ router.post('/', requireAuth, async (req, res) => {
 
     const userId = req.user.id;
     const invite_code = generateInviteCode();
-    const board_state = initialBoard();
+    const gameType = req.body.game_type === 'torus' ? 'torus' : 'raumschach';
+    const board_state = gameType === 'torus' ? torusInitialBoard() : initialBoard();
     const timeControl = [3, 5, 10, 15].includes(req.body.time_control) ? req.body.time_control : 0;
     const timeMsTotal = timeControl > 0 ? timeControl * 60 * 1000 : null;
 
@@ -99,7 +128,8 @@ router.post('/', requireAuth, async (req, res) => {
       invite_code,
       time_control: timeControl,
       white_time_remaining: timeMsTotal,
-      black_time_remaining: timeMsTotal
+      black_time_remaining: timeMsTotal,
+      game_type: gameType
     };
 
     const { data, error } = await supabase
@@ -117,6 +147,7 @@ router.post('/', requireAuth, async (req, res) => {
       invite_code: data.invite_code,
       color: color === 'white' ? 'w' : 'b',
       time_control: timeControl,
+      game_type: gameType,
       players
     });
   } catch (error) {
@@ -164,6 +195,7 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
         color: myColor,
         status: game.status,
         time_control: game.time_control || 0,
+        game_type: game.game_type || 'raumschach',
         white_time_remaining: whiteTimeRemaining,
         black_time_remaining: blackTimeRemaining,
         players
@@ -205,6 +237,7 @@ router.get('/join/:inviteCode', requireAuth, async (req, res) => {
       color: joinerColor,
       status: updated.status,
       time_control: updated.time_control || 0,
+      game_type: updated.game_type || 'raumschach',
       white_time_remaining: updated.white_time_remaining,
       black_time_remaining: updated.black_time_remaining,
       players
@@ -267,16 +300,12 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 /**
  * POST /api/games/:id/move
- * Submit a move. Body: { from: [x,y,z], to: [x,y,z] }
+ * Submit a move. Body: { from: [x,y,z] or [x,y], to: [x,y,z] or [x,y], promoteTo? }
  */
 router.post('/:id/move', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { from, to } = req.body;
-
-    if (!from || !to || from.length !== 3 || to.length !== 3) {
-      return res.status(400).json({ error: 'Invalid move format' });
-    }
+    const { from, to, promoteTo } = req.body;
 
     // Fetch game
     const { data: game, error: fetchErr } = await supabase
@@ -290,6 +319,13 @@ router.post('/:id/move', requireAuth, async (req, res) => {
     }
     if (game.status !== 'active') {
       return res.status(400).json({ error: 'Game is not active' });
+    }
+
+    const gameType = game.game_type || 'raumschach';
+    const coordLen = gameType === 'torus' ? 2 : 3;
+
+    if (!from || !to || from.length !== coordLen || to.length !== coordLen) {
+      return res.status(400).json({ error: 'Invalid move format' });
     }
 
     // Determine player's color
@@ -338,42 +374,77 @@ router.post('/:id/move', requireAuth, async (req, res) => {
       game[timeField] = remaining;
     }
 
-    // Validate move using shared game logic
+    // Validate and apply move
     const board = game.board_state;
-    const [fx, fy, fz] = from;
-    const piece = board[key(fx, fy, fz)];
-
-    if (!piece || piece.color !== playerColor) {
-      return res.status(400).json({ error: 'Invalid piece' });
-    }
-
-    const legal = legalMoves(board, fx, fy, fz);
-    const [tx, ty, tz] = to;
-    if (!legal.some(([mx, my, mz]) => mx === tx && my === ty && mz === tz)) {
-      return res.status(400).json({ error: 'Illegal move' });
-    }
-
-    // Apply move
-    const { board: newBoard, captured } = applyMove(board, from, to);
     const nextTurn = playerColor === 'w' ? 'b' : 'w';
-    const newMoveCount = game.move_count + 1;
+    let piece, newBoard, captured, gameOver, result, notation;
 
-    // Check for checkmate / stalemate
-    let gameOver = false;
-    let result = null;
-    if (!hasAnyLegalMove(newBoard, nextTurn)) {
-      gameOver = true;
-      if (isInCheck(newBoard, nextTurn)) {
-        result = playerColor === 'w' ? 'white_wins' : 'black_wins';
-      } else {
-        result = 'draw';
+    if (gameType === 'torus') {
+      const enPassantSquare = await getTorusEnPassant(game.id, game.move_count);
+      const [fx, fy] = from;
+      piece = board[torusKey(fx, fy)];
+      if (!piece || piece.color !== playerColor) {
+        return res.status(400).json({ error: 'Invalid piece' });
       }
+      const legal = torusLegalMoves(board, fx, fy, enPassantSquare);
+      const [tx, ty] = to;
+      if (!legal.some(([mx, my]) => mx === tx && my === ty)) {
+        return res.status(400).json({ error: 'Illegal move' });
+      }
+      const moveResult = torusApplyMove(board, from, to, promoteTo, enPassantSquare);
+      newBoard = moveResult.board;
+      captured = moveResult.captured;
+
+      // Compute en passant for the next move's checkmate/stalemate check
+      let nextEnPassant = null;
+      if (piece.type === 'P' && Math.abs(ty - fy) === 2) {
+        nextEnPassant = [fx, (fy + ty) / 2];
+      }
+      gameOver = false;
+      result = null;
+      if (!torusHasAnyLegalMove(newBoard, nextTurn, nextEnPassant)) {
+        gameOver = true;
+        if (torusIsInCheck(newBoard, nextTurn)) {
+          result = playerColor === 'w' ? 'white_wins' : 'black_wins';
+        } else {
+          result = 'draw';
+        }
+      }
+      const pn = piece.type === 'P' ? '' : piece.type;
+      const cap = captured ? 'x' : '';
+      notation = pn + torusCoordToNotation(...from) + cap + torusCoordToNotation(...to);
+    } else {
+      // Raumschach
+      const [fx, fy, fz] = from;
+      piece = board[key(fx, fy, fz)];
+      if (!piece || piece.color !== playerColor) {
+        return res.status(400).json({ error: 'Invalid piece' });
+      }
+      const legal = legalMoves(board, fx, fy, fz);
+      const [tx, ty, tz] = to;
+      if (!legal.some(([mx, my, mz]) => mx === tx && my === ty && mz === tz)) {
+        return res.status(400).json({ error: 'Illegal move' });
+      }
+      const moveResult = applyMove(board, from, to);
+      newBoard = moveResult.board;
+      captured = moveResult.captured;
+
+      gameOver = false;
+      result = null;
+      if (!hasAnyLegalMove(newBoard, nextTurn)) {
+        gameOver = true;
+        if (isInCheck(newBoard, nextTurn)) {
+          result = playerColor === 'w' ? 'white_wins' : 'black_wins';
+        } else {
+          result = 'draw';
+        }
+      }
+      const pn = piece.type === 'P' ? '' : piece.type;
+      const cap = captured ? 'x' : '';
+      notation = pn + coordToNotation(...from) + cap + coordToNotation(...to);
     }
 
-    // Build notation
-    const pn = piece.type === 'P' ? '' : piece.type;
-    const cap = captured ? 'x' : '';
-    const notation = pn + coordToNotation(...from) + cap + coordToNotation(...to);
+    const newMoveCount = game.move_count + 1;
 
     // Insert move
     const { error: moveErr } = await supabase

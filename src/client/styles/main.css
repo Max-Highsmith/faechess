@@ -1101,11 +1101,15 @@ canvas { display: block; }
 
 /* Torus mode visibility */
 #torus-game-view .mode-torus-game,
-#torus-game-view .mode-torus-ai { display: none; }
+#torus-game-view .mode-torus-ai,
+#torus-game-view .mode-torus-puzzles,
+#torus-game-view .mode-torus-online { display: none; }
 
 #torus-game-view.mode-torus-pvp .mode-torus-game { display: block; }
 #torus-game-view.mode-torus-pvai .mode-torus-game { display: block; }
 #torus-game-view.mode-torus-pvai .mode-torus-ai { display: block; }
+#torus-game-view.mode-torus-puzzles .mode-torus-puzzles { display: block; }
+#torus-game-view.mode-torus-online .mode-torus-game { display: block; }
 
 /* Torus promotion modal */
 #torus-promotion-modal {
@@ -1114,6 +1118,150 @@ canvas { display: block; }
   display: flex; align-items: center; justify-content: center;
 }
 #torus-promotion-modal.hidden { display: none; }
+
+/* ===================================
+   FIVE-BOARD CHESS
+   =================================== */
+
+/* Five-Board mode visibility */
+#five-board-game-view .mode-fb-game,
+#five-board-game-view .mode-fb-ai,
+#five-board-game-view .mode-fb-online { display: none; }
+
+#five-board-game-view.mode-fb-pvp .mode-fb-game { display: block; }
+#five-board-game-view.mode-fb-pvai .mode-fb-game { display: block; }
+#five-board-game-view.mode-fb-pvai .mode-fb-ai { display: block; }
+#five-board-game-view.mode-fb-online .mode-fb-game { display: block; }
+#five-board-game-view.mode-fb-online .mode-fb-online { display: block; }
+
+/* Five-Board UI panel */
+#fb-ui {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 100vh;
+  overflow-y: auto;
+  background: rgba(26, 26, 46, 0.95);
+  padding: 12px;
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+#fb-ui .game-header h1 {
+  font-size: 1.3rem;
+  margin: 0;
+  color: #f0e6d0;
+}
+
+#fb-ui .game-header h2 {
+  font-size: 0.9rem;
+  margin: 0 0 8px 0;
+  color: #ffdd44;
+  font-weight: normal;
+}
+
+#fb-turn {
+  font-size: 1.1rem;
+  color: #7fdbca;
+  margin: 8px 0 4px;
+}
+
+#fb-status {
+  font-size: 0.85rem;
+  color: #888;
+  min-height: 1.2em;
+  margin-bottom: 8px;
+}
+
+#fb-score {
+  font-size: 0.95rem;
+  color: #ffdd44;
+  margin: 4px 0 8px;
+}
+
+#fb-controls button {
+  padding: 6px 10px;
+  margin: 2px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+
+#fb-btn-reset { background: #2d5a27; color: #d4f0cd; }
+#fb-btn-reset:hover { background: #3a7a33; }
+#fb-btn-undo { background: #3a3a5c; color: #c8c8e8; }
+#fb-btn-undo:hover { background: #4a4a7c; }
+#fb-btn-concede { background: #5a4a27; color: #f0e6cd; }
+#fb-btn-concede:hover { background: #7a6a37; }
+#fb-btn-surrender { background: #5a2727; color: #f0cdcd; }
+#fb-btn-surrender:hover { background: #7a3333; }
+#fb-btn-export { background: #1a4a3a; color: #c0e8d8; }
+#fb-btn-export:hover { background: #1a5e3e; }
+
+#fb-controls .ctrl-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#fb-controls .ctrl-row label {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+#fb-controls .ctrl-row select {
+  background: #2a2a4a;
+  color: #c8c8e8;
+  border: 1px solid #444;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+#fb-move-log {
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+  color: #888;
+  line-height: 1.5;
+}
+
+/* Five-Board scoring info on mode select */
+.fb-scoring-info {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.fb-score-chip {
+  background: rgba(68, 170, 255, 0.15);
+  color: #88ccff;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(68, 170, 255, 0.3);
+}
+
+.fb-score-chip.fb-center {
+  background: rgba(255, 221, 68, 0.15);
+  color: #ffdd44;
+  border-color: rgba(255, 221, 68, 0.3);
+}
+
+/* Five-Board promotion modal */
+#fb-promotion-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6); z-index: 150;
+  display: flex; align-items: center; justify-content: center;
+}
+#fb-promotion-modal.hidden { display: none; }
 
 /* ===================================
    IF3DC FEDERATION SECTION

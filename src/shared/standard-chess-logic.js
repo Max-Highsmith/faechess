@@ -1,9 +1,7 @@
 /**
- * Torus Chess (8×8 Wraparound) – Game Logic
+ * Standard Chess (8×8) – Game Logic
  *
- * Standard chess on an 8×8 board with toroidal topology:
- * files (x) and ranks (y) wrap around. No castling.
- *
+ * Standard chess with full rules: castling, en passant, promotion.
  * Coordinates: (x, y) where x=file(0-7, a-h), y=rank(0-7, 1-8)
  * y=0 is White's back rank, y=7 is Black's back rank.
  */
@@ -18,38 +16,34 @@ export const PIECE_NAMES = { K:'King', Q:'Queen', R:'Rook', B:'Bishop', N:'Knigh
 export function key(x, y) { return `${x},${y}`; }
 export function parseKey(k) { return k.split(',').map(Number); }
 
-export function wrap(n) { return ((n % 8) + 8) % 8; }
+function inBounds(x, y) { return x >= 0 && x <= 7 && y >= 0 && y <= 7; }
 
 export function initialBoard() {
   const board = {};
   const backRank = ['R','N','B','Q','K','B','N','R'];
-  // White: rear pawns at y=1, back rank at y=2, front pawns at y=3
-  // Black: front pawns at y=6, back rank at y=7, rear pawns at y=0 (wrapping)
   for (let x = 0; x < 8; x++) {
+    board[key(x, 0)] = { type: backRank[x], color: 'w' };
     board[key(x, 1)] = { type: 'P', color: 'w' };
-    board[key(x, 2)] = { type: backRank[x], color: 'w' };
-    board[key(x, 3)] = { type: 'P', color: 'w' };
     board[key(x, 6)] = { type: 'P', color: 'b' };
     board[key(x, 7)] = { type: backRank[x], color: 'b' };
-    board[key(x, 0)] = { type: 'P', color: 'b' };
   }
   return board;
 }
 
-// Sliding piece: move along direction with wrapping; stop at start or blocker
+// Sliding piece: move along direction; stop at edge or blocker
 function slidingMoves(board, x, y, directions, color) {
   const moves = [];
   for (const [dx, dy] of directions) {
-    let nx = wrap(x + dx), ny = wrap(y + dy);
-    while (!(nx === x && ny === y)) {
+    let nx = x + dx, ny = y + dy;
+    while (inBounds(nx, ny)) {
       const target = board[key(nx, ny)];
       if (target) {
         if (target.color !== color) moves.push([nx, ny]);
         break;
       }
       moves.push([nx, ny]);
-      nx = wrap(nx + dx);
-      ny = wrap(ny + dy);
+      nx += dx;
+      ny += dy;
     }
   }
   return moves;
@@ -67,48 +61,86 @@ const KNIGHT_JUMPS = [
 function knightMoves(board, x, y, color) {
   const moves = [];
   for (const [dx, dy] of KNIGHT_JUMPS) {
-    const nx = wrap(x + dx), ny = wrap(y + dy);
+    const nx = x + dx, ny = y + dy;
+    if (!inBounds(nx, ny)) continue;
     const target = board[key(nx, ny)];
     if (!target || target.color !== color) moves.push([nx, ny]);
   }
   return moves;
 }
 
-function kingMoves(board, x, y, color) {
+function kingMoves(board, x, y, color, castleRights) {
   const moves = [];
   for (let dx = -1; dx <= 1; dx++) {
     for (let dy = -1; dy <= 1; dy++) {
       if (dx === 0 && dy === 0) continue;
-      const nx = wrap(x + dx), ny = wrap(y + dy);
+      const nx = x + dx, ny = y + dy;
+      if (!inBounds(nx, ny)) continue;
       const target = board[key(nx, ny)];
       if (!target || target.color !== color) moves.push([nx, ny]);
     }
   }
+
+  // Castling
+  if (castleRights) {
+    const rank = color === 'w' ? 0 : 7;
+    if (x === 4 && y === rank) {
+      // King-side: e→g, rook h→f
+      if (castleRights[color + 'k']) {
+        const rookPiece = board[key(7, rank)];
+        if (rookPiece && rookPiece.type === 'R' && rookPiece.color === color &&
+            !board[key(5, rank)] && !board[key(6, rank)]) {
+          // Check that king doesn't pass through or end in check
+          const enemy = color === 'w' ? 'b' : 'w';
+          if (!isAttacked(board, 4, rank, enemy) &&
+              !isAttacked(board, 5, rank, enemy) &&
+              !isAttacked(board, 6, rank, enemy)) {
+            moves.push([6, rank]);
+          }
+        }
+      }
+      // Queen-side: e→c, rook a→d
+      if (castleRights[color + 'q']) {
+        const rookPiece = board[key(0, rank)];
+        if (rookPiece && rookPiece.type === 'R' && rookPiece.color === color &&
+            !board[key(1, rank)] && !board[key(2, rank)] && !board[key(3, rank)]) {
+          const enemy = color === 'w' ? 'b' : 'w';
+          if (!isAttacked(board, 4, rank, enemy) &&
+              !isAttacked(board, 3, rank, enemy) &&
+              !isAttacked(board, 2, rank, enemy)) {
+            moves.push([2, rank]);
+          }
+        }
+      }
+    }
+  }
+
   return moves;
 }
 
 function pawnMoves(board, x, y, color, enPassantSquare) {
   const moves = [];
   const dir = color === 'w' ? 1 : -1;
-  const startRanks = color === 'w' ? [1, 3] : [0, 6];
-  const promoRank = color === 'w' ? 7 : 2;
+  const startRank = color === 'w' ? 1 : 6;
+  const promoRank = color === 'w' ? 7 : 0;
 
-  // Forward one (rank does NOT wrap for pawns)
+  // Forward one
   const fy = y + dir;
-  if (fy >= 0 && fy <= 7 && !board[key(x, fy)]) {
+  if (inBounds(x, fy) && !board[key(x, fy)]) {
     moves.push([x, fy]);
-    // Double push from starting ranks
+    // Double push from starting rank
     const fy2 = y + 2 * dir;
-    if (startRanks.includes(y) && fy2 >= 0 && fy2 <= 7 && !board[key(x, fy2)]) {
+    if (y === startRank && inBounds(x, fy2) && !board[key(x, fy2)]) {
       moves.push([x, fy2]);
     }
   }
 
-  // Captures (file wraps, rank does not)
+  // Captures
   const cy = y + dir;
-  if (cy >= 0 && cy <= 7) {
+  if (inBounds(0, cy)) {
     for (const dx of [-1, 1]) {
-      const cx = wrap(x + dx);
+      const cx = x + dx;
+      if (!inBounds(cx, cy)) continue;
       const target = board[key(cx, cy)];
       if (target && target.color !== color) {
         moves.push([cx, cy]);
@@ -123,7 +155,7 @@ function pawnMoves(board, x, y, color, enPassantSquare) {
   return moves;
 }
 
-function pseudoLegalMoves(board, x, y, enPassantSquare) {
+function pseudoLegalMoves(board, x, y, enPassantSquare, castleRights) {
   const piece = board[key(x, y)];
   if (!piece) return [];
   const c = piece.color;
@@ -132,7 +164,7 @@ function pseudoLegalMoves(board, x, y, enPassantSquare) {
     case 'B': return slidingMoves(board, x, y, BISHOP_DIRS, c);
     case 'Q': return slidingMoves(board, x, y, QUEEN_DIRS, c);
     case 'N': return knightMoves(board, x, y, c);
-    case 'K': return kingMoves(board, x, y, c);
+    case 'K': return kingMoves(board, x, y, c, castleRights);
     case 'P': return pawnMoves(board, x, y, c, enPassantSquare);
     default: return [];
   }
@@ -151,8 +183,7 @@ function isAttacked(board, x, y, byColor) {
     const p = board[k];
     if (p.color !== byColor) continue;
     const [px, py] = parseKey(k);
-    // Use null for en passant — attacks don't depend on en passant
-    const moves = pseudoLegalMoves(board, px, py, null);
+    const moves = pseudoLegalMoves(board, px, py, null, null);
     if (moves.some(([mx, my]) => mx === x && my === y)) return true;
   }
   return false;
@@ -177,7 +208,7 @@ export function isPromotionMove(board, from, to) {
   const piece = board[key(from[0], from[1])];
   if (!piece || piece.type !== 'P') return false;
   if (piece.color === 'w' && to[1] === 7) return true;
-  if (piece.color === 'b' && to[1] === 2) return true;
+  if (piece.color === 'b' && to[1] === 0) return true;
   return false;
 }
 
@@ -196,14 +227,27 @@ export function applyMove(board, from, to, promoteTo, enPassantSquare) {
   let epCaptured = null;
   if (piece.type === 'P' && enPassantSquare &&
       tx === enPassantSquare[0] && ty === enPassantSquare[1] && !captured) {
-    const epPawnKey = key(tx, fy); // captured pawn is on same rank as moving pawn
+    const epPawnKey = key(tx, fy);
     epCaptured = nb[epPawnKey] || null;
     delete nb[epPawnKey];
   }
 
+  // Castling rook movement
+  if (piece.type === 'K' && Math.abs(tx - fx) === 2) {
+    if (tx === 6) {
+      // King-side
+      nb[key(5, fy)] = nb[key(7, fy)];
+      delete nb[key(7, fy)];
+    } else if (tx === 2) {
+      // Queen-side
+      nb[key(3, fy)] = nb[key(0, fy)];
+      delete nb[key(0, fy)];
+    }
+  }
+
   // Pawn promotion
   if (piece.type === 'P') {
-    if ((piece.color === 'w' && ty === 7) || (piece.color === 'b' && ty === 2)) {
+    if ((piece.color === 'w' && ty === 7) || (piece.color === 'b' && ty === 0)) {
       nb[tk].type = promoteTo || 'Q';
     }
   }
@@ -211,10 +255,10 @@ export function applyMove(board, from, to, promoteTo, enPassantSquare) {
   return { board: nb, captured: captured || epCaptured };
 }
 
-export function legalMoves(board, x, y, enPassantSquare) {
+export function legalMoves(board, x, y, enPassantSquare, castleRights) {
   const piece = board[key(x, y)];
   if (!piece) return [];
-  const pseudo = pseudoLegalMoves(board, x, y, enPassantSquare);
+  const pseudo = pseudoLegalMoves(board, x, y, enPassantSquare, castleRights);
   const legal = [];
   for (const [tx, ty] of pseudo) {
     const { board: nb } = applyMove(board, [x, y], [tx, ty], undefined, enPassantSquare);
@@ -225,12 +269,12 @@ export function legalMoves(board, x, y, enPassantSquare) {
   return legal;
 }
 
-export function hasAnyLegalMove(board, color, enPassantSquare) {
+export function hasAnyLegalMove(board, color, enPassantSquare, castleRights) {
   for (const k of Object.keys(board)) {
     const p = board[k];
     if (p.color !== color) continue;
     const [x, y] = parseKey(k);
-    if (legalMoves(board, x, y, enPassantSquare).length > 0) return true;
+    if (legalMoves(board, x, y, enPassantSquare, castleRights).length > 0) return true;
   }
   return false;
 }
@@ -239,7 +283,7 @@ export function coordToNotation(x, y) {
   return String.fromCharCode(97 + x) + (y + 1);
 }
 
-export class TorusGame {
+export class StandardGame {
   constructor() { this.reset(); }
 
   reset() {
@@ -250,12 +294,14 @@ export class TorusGame {
     this.gameOver = false;
     this.result = null;
     this.enPassantSquare = null;
+    // Castle rights: wk = white king-side, wq = white queen-side, bk, bq
+    this.castleRights = { wk: true, wq: true, bk: true, bq: true };
   }
 
   getLegalMoves(x, y) {
     const piece = this.board[key(x, y)];
     if (!piece || piece.color !== this.turn || this.gameOver) return [];
-    return legalMoves(this.board, x, y, this.enPassantSquare);
+    return legalMoves(this.board, x, y, this.enPassantSquare, this.castleRights);
   }
 
   makeMove(from, to, promoteTo) {
@@ -263,7 +309,7 @@ export class TorusGame {
     const piece = this.board[key(fx, fy)];
     if (!piece || piece.color !== this.turn || this.gameOver) return false;
 
-    const legal = legalMoves(this.board, fx, fy, this.enPassantSquare);
+    const legal = legalMoves(this.board, fx, fy, this.enPassantSquare, this.castleRights);
     const [tx, ty] = to;
     if (!legal.some(([mx, my]) => mx === tx && my === ty)) return false;
 
@@ -274,7 +320,8 @@ export class TorusGame {
       from, to, piece: { ...piece },
       captured,
       turn: this.turn,
-      enPassantSquare: this.enPassantSquare
+      enPassantSquare: this.enPassantSquare,
+      castleRights: { ...this.castleRights }
     });
 
     if (captured) {
@@ -282,22 +329,44 @@ export class TorusGame {
     }
 
     this.board = nb;
+
+    // Update castle rights
+    const newRights = { ...this.castleRights };
+    if (piece.type === 'K') {
+      if (piece.color === 'w') { newRights.wk = false; newRights.wq = false; }
+      else { newRights.bk = false; newRights.bq = false; }
+    }
+    if (piece.type === 'R') {
+      if (fx === 0 && fy === 0) newRights.wq = false;
+      if (fx === 7 && fy === 0) newRights.wk = false;
+      if (fx === 0 && fy === 7) newRights.bq = false;
+      if (fx === 7 && fy === 7) newRights.bk = false;
+    }
+    // If a rook is captured, also remove that side's castle right
+    if (captured && captured.type === 'R') {
+      if (tx === 0 && ty === 0) newRights.wq = false;
+      if (tx === 7 && ty === 0) newRights.wk = false;
+      if (tx === 0 && ty === 7) newRights.bq = false;
+      if (tx === 7 && ty === 7) newRights.bk = false;
+    }
+    this.castleRights = newRights;
+
     this.turn = this.turn === 'w' ? 'b' : 'w';
 
     // Update en passant square
     if (piece.type === 'P' && Math.abs(ty - fy) === 2) {
-      this.enPassantSquare = [fx, (fy + ty) / 2]; // square the pawn passed through
+      this.enPassantSquare = [fx, (fy + ty) / 2];
     } else {
       this.enPassantSquare = null;
     }
 
     // Check for checkmate/stalemate
-    if (!hasAnyLegalMove(this.board, this.turn, this.enPassantSquare)) {
+    if (!hasAnyLegalMove(this.board, this.turn, this.enPassantSquare, this.castleRights)) {
       this.gameOver = true;
       if (isInCheck(this.board, this.turn)) {
         this.result = this.turn === 'w' ? 'Black wins by checkmate!' : 'White wins by checkmate!';
       } else {
-        this.result = 'Stalemate \u2013 draw!';
+        this.result = 'Stalemate – draw!';
       }
     }
 
@@ -310,6 +379,7 @@ export class TorusGame {
     this.board = last.board;
     this.turn = last.turn;
     this.enPassantSquare = last.enPassantSquare;
+    this.castleRights = last.castleRights;
     if (last.captured) {
       this.captured[last.captured.color].pop();
     }
@@ -323,6 +393,10 @@ export class TorusGame {
   getMoveNotation(from, to, piece, captured) {
     const pn = piece.type === 'P' ? '' : piece.type;
     const cap = captured ? 'x' : '';
+    // Castling notation
+    if (piece.type === 'K' && Math.abs(to[0] - from[0]) === 2) {
+      return to[0] === 6 ? 'O-O' : 'O-O-O';
+    }
     return pn + coordToNotation(...from) + cap + coordToNotation(...to);
   }
 
@@ -358,7 +432,7 @@ export class TorusGame {
 
     return {
       format: 'faechess-v1',
-      variant: 'torus-8x8',
+      variant: 'standard-8x8',
       date: new Date().toISOString(),
       totalMoves: this.history.length,
       result,

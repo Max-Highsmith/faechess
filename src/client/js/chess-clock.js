@@ -17,12 +17,12 @@ let whiteContainerEl = null;
 let blackContainerEl = null;
 let clockRootEl = null;
 
-export function init() {
-  clockRootEl = document.getElementById('chess-clock');
-  whiteClockEl = document.getElementById('clock-white-time');
-  blackClockEl = document.getElementById('clock-black-time');
-  whiteContainerEl = document.getElementById('clock-white');
-  blackContainerEl = document.getElementById('clock-black');
+export function init(prefix = '') {
+  clockRootEl = document.getElementById(prefix + 'chess-clock');
+  whiteClockEl = document.getElementById(prefix + 'clock-white-time');
+  blackClockEl = document.getElementById(prefix + 'clock-black-time');
+  whiteContainerEl = document.getElementById(prefix + 'clock-white');
+  blackContainerEl = document.getElementById(prefix + 'clock-black');
 }
 
 export function setTimeControl(minutes) {
