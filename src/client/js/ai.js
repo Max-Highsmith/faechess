@@ -59,28 +59,21 @@ function minimax(board, depth, alpha, beta, maximizing, aiColor, isRoot = false)
   });
 
   let bestMove = moves[0];
-  // At root, track top 3 moves by score
-  const topMoves = isRoot ? [] : null;
 
   if (maximizing) {
     let maxEval = -Infinity;
     for (const move of moves) {
       const { board: nb } = GameModule.applyMove(board, move.from, move.to);
       const { score } = minimax(nb, depth - 1, alpha, beta, false, aiColor);
-      if (isRoot) {
-        topMoves.push({ move, score });
-      }
-      if (score > maxEval) {
-        maxEval = score;
+      const jittered = score + (Math.random() - 0.5) * 20;
+      if (jittered > maxEval) {
+        maxEval = jittered;
         bestMove = move;
       }
       alpha = Math.max(alpha, score);
-      if (!isRoot && beta <= alpha) break;
+      if (beta <= alpha) break;
     }
-    if (isRoot) {
-      topMoves.sort((a, b) => b.score - a.score);
-    }
-    return { score: maxEval, move: bestMove, topMoves };
+    return { score: maxEval, move: bestMove };
   } else {
     let minEval = Infinity;
     for (const move of moves) {

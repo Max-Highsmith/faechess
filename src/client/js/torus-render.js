@@ -145,6 +145,15 @@ const TorusRenderer = (() => {
         ctx.fillStyle = isLight ? LIGHT_COLOR : DARK_COLOR;
         ctx.fillRect(px, py, cellPx, cellPx);
 
+        // Back rank tint
+        if (y === 1) {
+          ctx.fillStyle = 'rgba(240, 230, 208, 0.18)'; // light gold for white back rank
+          ctx.fillRect(px, py, cellPx, cellPx);
+        } else if (y === 5) {
+          ctx.fillStyle = 'rgba(60, 60, 100, 0.22)'; // dark blue for black back rank
+          ctx.fillRect(px, py, cellPx, cellPx);
+        }
+
         // Last move highlights
         if (lastMoveFrom && lastMoveFrom[0] === x && lastMoveFrom[1] === y) {
           ctx.strokeStyle = 'rgba(224, 112, 48, 0.7)';

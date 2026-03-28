@@ -10,6 +10,7 @@ function hideAll() {
     if (el) el.classList.add('hidden');
   }
   // Hide renderers attached to document.body
+  if (typeof window.hideRaumschachRenderer === 'function') window.hideRaumschachRenderer();
   if (typeof window.hideTorusRenderer === 'function') window.hideTorusRenderer();
   if (typeof window.hideFiveBoardRenderer === 'function') window.hideFiveBoardRenderer();
 }
@@ -154,6 +155,9 @@ export function initNavigation() {
       if (window._pendingGameType === 'torus') {
         window._pendingGameType = null;
         showTorusModeSelect();
+      } else if (window._pendingGameType === 'five-board') {
+        window._pendingGameType = null;
+        showFiveBoardModeSelect();
       } else {
         window._pendingGameType = null;
         showModeSelect();
@@ -310,6 +314,26 @@ export function initNavigation() {
     if (btn) {
       btn.addEventListener('click', () => startFiveBoardGame(mode));
     }
+  }
+
+  // Five-Board online mode card → online setup (requires auth)
+  const fbModeOnline = document.getElementById('fb-mode-online');
+  if (fbModeOnline) {
+    fbModeOnline.addEventListener('click', () => {
+      import('./auth.js').then(({ isAuthenticated }) => {
+        window._pendingGameType = 'five-board';
+        const authReq = document.getElementById('online-auth-required');
+        const panels = document.getElementById('online-panels');
+        if (isAuthenticated()) {
+          if (authReq) authReq.classList.add('hidden');
+          if (panels) panels.style.display = '';
+        } else {
+          if (authReq) authReq.classList.remove('hidden');
+          if (panels) panels.style.display = 'none';
+        }
+        showOnlineSetup();
+      });
+    });
   }
 
   // Five-Board game view back → five-board mode select

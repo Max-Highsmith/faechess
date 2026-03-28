@@ -102,13 +102,23 @@ const Torus3DRenderer = (() => {
     return geo;
   }
 
+  // Back rank tint colors
+  const WHITE_BR_TINT = new THREE.Color(0xf0e6d0); // light gold
+  const BLACK_BR_TINT = new THREE.Color(0x3c3c64); // dark blue
+
   function buildBoard() {
     for (let x = 0; x < COLS; x++) {
       for (let y = 0; y < ROWS; y++) {
         const isLight = (x + y) % 2 === 0;
+        const baseColor = new THREE.Color(isLight ? LIGHT_SQ : DARK_SQ);
+
+        // Tint back ranks slightly
+        if (y === 1) baseColor.lerp(WHITE_BR_TINT, 0.18);
+        else if (y === 5) baseColor.lerp(BLACK_BR_TINT, 0.22);
+
         const geo = buildCellGeometry(x, y);
         const mat = new THREE.MeshPhongMaterial({
-          color: isLight ? LIGHT_SQ : DARK_SQ,
+          color: baseColor,
           side: THREE.DoubleSide,
           transparent: true,
           opacity: 0.92,

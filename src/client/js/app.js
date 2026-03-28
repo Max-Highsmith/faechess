@@ -16,7 +16,7 @@ import * as FiveBoardGameModule from './five-board-game.js';
 import * as FiveBoardAIModule from './five-board-ai.js';
 import * as ChessClockModule from './chess-clock.js';
 import { initAuth, getCurrentUser, getAuthToken, isAuthenticated } from './auth.js';
-import { initNavigation, startOnlineGame, showOnlineSetup, startTorusOnlineGame } from './navigation.js';
+import { initNavigation, startOnlineGame, showOnlineSetup, startTorusOnlineGame, startFiveBoardGame } from './navigation.js';
 import { initProfileSetup } from './profile.js';
 
 // Make THREE and OrbitControls available globally for render.js
@@ -115,6 +115,8 @@ function routeOnlineGame() {
   const ag = MultiplayerModule.getActiveGame();
   if (ag && ag.gameType === 'torus') {
     startTorusOnlineGame();
+  } else if (ag && ag.gameType === 'five-board') {
+    startFiveBoardGame('fb-online');
   } else {
     startOnlineGame();
   }

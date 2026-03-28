@@ -23,15 +23,18 @@ export function wrap(n) { return ((n % 8) + 8) % 8; }
 export function initialBoard() {
   const board = {};
   const backRank = ['R','N','B','Q','K','B','N','R'];
-  // White: rear pawns at y=1, back rank at y=2, front pawns at y=3
-  // Black: front pawns at y=6, back rank at y=7, rear pawns at y=0 (wrapping)
+  // Layout (wraps y=7→y=0): 1 empty row between each side on both edges
+  // y=0: White rear pawns, y=1: White back rank, y=2: White front pawns
+  // y=3: empty
+  // y=4: Black front pawns, y=5: Black back rank, y=6: Black rear pawns
+  // y=7: empty
   for (let x = 0; x < 8; x++) {
-    board[key(x, 1)] = { type: 'P', color: 'w' };
-    board[key(x, 2)] = { type: backRank[x], color: 'w' };
-    board[key(x, 3)] = { type: 'P', color: 'w' };
+    board[key(x, 0)] = { type: 'P', color: 'w' };
+    board[key(x, 1)] = { type: backRank[x], color: 'w' };
+    board[key(x, 2)] = { type: 'P', color: 'w' };
+    board[key(x, 4)] = { type: 'P', color: 'b' };
+    board[key(x, 5)] = { type: backRank[x], color: 'b' };
     board[key(x, 6)] = { type: 'P', color: 'b' };
-    board[key(x, 7)] = { type: backRank[x], color: 'b' };
-    board[key(x, 0)] = { type: 'P', color: 'b' };
   }
   return board;
 }
@@ -87,36 +90,56 @@ function kingMoves(board, x, y, color) {
   return moves;
 }
 
+// Back-rank positions (exported for renderers to highlight)
+export const WHITE_BACK_RANK = 1;
+export const BLACK_BACK_RANK = 5;
+
+// Pawn direction: front pawns move toward enemy, rear pawns move away (wrapping)
+function pawnDirection(color, y) {
+  if (color === 'w') {
+    // White back rank at y=1. Rear pawns at y=0 or y=7 move -1 (wrapping toward enemy).
+    return (y === 0 || y === 7) ? -1 : 1;
+  } else {
+    // Black back rank at y=5. Rear pawns at y=6 or y=7 move +1 (wrapping toward enemy).
+    return (y === 6 || y === 7) ? 1 : -1;
+  }
+}
+
+// Promotion rank: one row past the enemy back rank
+const WHITE_PROMO_RANK = 6; // past black back rank (y=5)
+const BLACK_PROMO_RANK = 0; // past white back rank (y=1)
+
 function pawnMoves(board, x, y, color, enPassantSquare) {
   const moves = [];
-  const dir = color === 'w' ? 1 : -1;
-  const startRanks = color === 'w' ? [1, 3] : [0, 6];
-  const promoRank = color === 'w' ? 7 : 2;
+  const dir = pawnDirection(color, y);
+  const promoRank = color === 'w' ? WHITE_PROMO_RANK : BLACK_PROMO_RANK;
+  // Only front pawns get double push (rear pawns are too close via wrapping)
+  const doubleRanks = color === 'w' ? [2] : [4];
 
-  // Forward one (rank does NOT wrap for pawns)
-  const fy = y + dir;
-  if (fy >= 0 && fy <= 7 && !board[key(x, fy)]) {
+  // Forward one (wraps on the torus)
+  const fy = wrap(y + dir);
+  if (!board[key(x, fy)]) {
     moves.push([x, fy]);
-    // Double push from starting ranks
-    const fy2 = y + 2 * dir;
-    if (startRanks.includes(y) && fy2 >= 0 && fy2 <= 7 && !board[key(x, fy2)]) {
-      moves.push([x, fy2]);
+    // Double push from front starting rank only
+    if (doubleRanks.includes(y)) {
+      const fy2 = wrap(y + 2 * dir);
+      if (!board[key(x, fy2)]) {
+        moves.push([x, fy2]);
+      }
     }
   }
 
-  // Captures (file wraps, rank does not)
-  const cy = y + dir;
-  if (cy >= 0 && cy <= 7) {
-    for (const dx of [-1, 1]) {
-      const cx = wrap(x + dx);
-      const target = board[key(cx, cy)];
-      if (target && target.color !== color) {
-        moves.push([cx, cy]);
-      }
-      // En passant
-      if (enPassantSquare && enPassantSquare[0] === cx && enPassantSquare[1] === cy) {
-        moves.push([cx, cy]);
-      }
+  // Captures (both file and rank wrap)
+  const cy = wrap(y + dir);
+  for (const dx of [-1, 1]) {
+    const cx = wrap(x + dx);
+    const target = board[key(cx, cy)];
+    if (target && target.color !== color) {
+      moves.push([cx, cy]);
+    }
+    // En passant
+    if (enPassantSquare && enPassantSquare[0] === cx && enPassantSquare[1] === cy) {
+      moves.push([cx, cy]);
     }
   }
 
@@ -176,8 +199,8 @@ export function cloneBoard(board) {
 export function isPromotionMove(board, from, to) {
   const piece = board[key(from[0], from[1])];
   if (!piece || piece.type !== 'P') return false;
-  if (piece.color === 'w' && to[1] === 7) return true;
-  if (piece.color === 'b' && to[1] === 2) return true;
+  if (piece.color === 'w' && to[1] === WHITE_PROMO_RANK) return true;
+  if (piece.color === 'b' && to[1] === BLACK_PROMO_RANK) return true;
   return false;
 }
 
@@ -203,7 +226,7 @@ export function applyMove(board, from, to, promoteTo, enPassantSquare) {
 
   // Pawn promotion
   if (piece.type === 'P') {
-    if ((piece.color === 'w' && ty === 7) || (piece.color === 'b' && ty === 2)) {
+    if ((piece.color === 'w' && ty === WHITE_PROMO_RANK) || (piece.color === 'b' && ty === BLACK_PROMO_RANK)) {
       nb[tk].type = promoteTo || 'Q';
     }
   }
@@ -284,9 +307,9 @@ export class TorusGame {
     this.board = nb;
     this.turn = this.turn === 'w' ? 'b' : 'w';
 
-    // Update en passant square
+    // Update en passant square (only front pawns double-push, no wrapping involved)
     if (piece.type === 'P' && Math.abs(ty - fy) === 2) {
-      this.enPassantSquare = [fx, (fy + ty) / 2]; // square the pawn passed through
+      this.enPassantSquare = [fx, Math.floor((fy + ty) / 2)];
     } else {
       this.enPassantSquare = null;
     }

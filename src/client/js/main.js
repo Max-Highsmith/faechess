@@ -1315,4 +1315,10 @@
       exitEndgameLesson();
     }
   });
+
+  // Hide renderers when navigating away from 3D chess
+  window.hideRaumschachRenderer = function () {
+    BoardRenderer.hide();
+    if (flatInitialized) FlatRenderer.hide();
+  };
 })();
