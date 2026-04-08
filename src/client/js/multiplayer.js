@@ -11,6 +11,11 @@ let onMoveReceived = null;
 let onGameEvent = null;
 let playerProfiles = {};  // { [userId]: { id, game_id, avatar_url } }
 
+// Matchmaking state
+let matchmakingChannel = null;
+let onMatchFound = null;
+let pollInterval = null;
+
 /**
  * Register callbacks from main.js.
  *   onMove(payload)  – called when opponent makes a move
@@ -258,6 +263,199 @@ export async function resignGame() {
   return data;
 }
 
+/* ============================
+   RANKED MATCHMAKING
+   ============================ */
+
+/**
+ * Set callback for when a match is found (for queued players).
+ */
+export function setMatchCallback(callback) {
+  onMatchFound = callback;
+}
+
+/**
+ * Join the ranked matchmaking queue.
+ * Returns { status: 'queued' | 'matched', game_id?, color?, ... }
+ */
+export async function joinQueue(gameType, timeControl) {
+  const headers = await authHeaders();
+  const res = await fetch('/api/matchmaking/join', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ game_type: gameType, time_control: timeControl })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to join queue');
+  }
+
+  const data = await res.json();
+
+  if (data.status === 'matched') {
+    // Instant match — set up the game
+    activeGame = {
+      id: data.game_id,
+      invite_code: null,
+      myColor: data.color,
+      status: 'active',
+      timeControl: data.time_control || 0,
+      whiteTimeRemaining: data.white_time_remaining,
+      blackTimeRemaining: data.black_time_remaining,
+      gameType: data.game_type || 'raumschach'
+    };
+    if (data.players) {
+      data.players.forEach(p => { playerProfiles[p.id] = p; });
+    }
+    subscribeToGame(data.game_id);
+
+    // Notify the waiting player via their matchmaking channel
+    const user = getCurrentUser();
+    const opponentId = data.players?.find(p => p.id !== user.id)?.id;
+    if (opponentId) {
+      notifyMatch(opponentId, data);
+    }
+  } else {
+    // Queued — subscribe to our own matchmaking channel and start polling
+    const user = getCurrentUser();
+    subscribeToMatchmaking(user.id);
+  }
+
+  return data;
+}
+
+/**
+ * Leave the matchmaking queue.
+ */
+export async function leaveQueue() {
+  cleanupMatchmaking();
+  try {
+    const headers = await authHeaders();
+    await fetch('/api/matchmaking/leave', { method: 'POST', headers });
+  } catch (e) {
+    console.warn('[MP] Error leaving queue:', e);
+  }
+}
+
+/**
+ * Subscribe to personal matchmaking channel to receive match notifications.
+ */
+function subscribeToMatchmaking(userId) {
+  cleanupMatchmaking();
+
+  matchmakingChannel = supabase.channel(`matchmaking:${userId}`, {
+    config: { broadcast: { self: false } }
+  });
+
+  matchmakingChannel
+    .on('broadcast', { event: 'matched' }, ({ payload }) => {
+      console.log('[MP] Matched via broadcast:', payload);
+      cleanupMatchmaking();
+
+      activeGame = {
+        id: payload.game_id,
+        invite_code: null,
+        myColor: payload.color,
+        status: 'active',
+        timeControl: payload.time_control || 0,
+        whiteTimeRemaining: payload.white_time_remaining,
+        blackTimeRemaining: payload.black_time_remaining,
+        gameType: payload.game_type || 'raumschach'
+      };
+      if (payload.players) {
+        payload.players.forEach(p => { playerProfiles[p.id] = p; });
+      }
+      subscribeToGame(payload.game_id);
+
+      if (onMatchFound) onMatchFound(payload);
+    })
+    .subscribe();
+
+  // Polling fallback every 3 seconds
+  startPolling();
+}
+
+/**
+ * Notify a waiting player that they have been matched.
+ */
+function notifyMatch(opponentId, matchData) {
+  const user = getCurrentUser();
+  const opponentColor = matchData.color === 'w' ? 'b' : 'w';
+
+  const tempChannel = supabase.channel(`matchmaking:${opponentId}`, {
+    config: { broadcast: { self: false } }
+  });
+
+  tempChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      tempChannel.send({
+        type: 'broadcast',
+        event: 'matched',
+        payload: {
+          game_id: matchData.game_id,
+          color: opponentColor,
+          time_control: matchData.time_control,
+          game_type: matchData.game_type,
+          white_time_remaining: matchData.white_time_remaining,
+          black_time_remaining: matchData.black_time_remaining,
+          players: matchData.players
+        }
+      }).then(() => {
+        console.log('[MP] Notified opponent of match');
+        setTimeout(() => supabase.removeChannel(tempChannel), 2000);
+      });
+    }
+  });
+}
+
+function startPolling() {
+  stopPolling();
+  pollInterval = setInterval(async () => {
+    try {
+      const headers = await authHeaders();
+      const res = await fetch('/api/matchmaking/status', { headers });
+      const data = await res.json();
+      if (data.status === 'matched') {
+        stopPolling();
+        cleanupMatchmaking();
+        activeGame = {
+          id: data.game_id,
+          invite_code: null,
+          myColor: data.color,
+          status: 'active',
+          timeControl: data.time_control || 0,
+          whiteTimeRemaining: data.white_time_remaining,
+          blackTimeRemaining: data.black_time_remaining,
+          gameType: data.game_type || 'raumschach'
+        };
+        if (data.players) {
+          data.players.forEach(p => { playerProfiles[p.id] = p; });
+        }
+        subscribeToGame(data.game_id);
+        if (onMatchFound) onMatchFound(data);
+      }
+    } catch (e) {
+      console.warn('[MP] Poll error:', e);
+    }
+  }, 3000);
+}
+
+function stopPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+}
+
+function cleanupMatchmaking() {
+  if (matchmakingChannel) {
+    supabase.removeChannel(matchmakingChannel);
+    matchmakingChannel = null;
+  }
+  stopPolling();
+}
+
 /**
  * Unsubscribe from the realtime channel and clear state.
  */
@@ -266,6 +464,7 @@ export function cleanup() {
     supabase.removeChannel(channel);
     channel = null;
   }
+  cleanupMatchmaking();
   activeGame = null;
   playerProfiles = {};
 }

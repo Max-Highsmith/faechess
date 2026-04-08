@@ -12,6 +12,7 @@ import adminRoutes from './routes/admin.routes.js';
 import gameRoutes from './routes/game.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 import leaderboardRoutes from './routes/leaderboard.routes.js';
+import matchmakingRoutes from './routes/matchmaking.routes.js';
 
 // Import scheduler
 import { startWeeklyPuzzleScheduler } from './puzzle-scheduler.js';
@@ -39,6 +40,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/matchmaking', matchmakingRoutes);
 
 // Serve static files from public directory (only in production)
 if (process.env.NODE_ENV === 'production') {

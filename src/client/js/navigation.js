@@ -2,7 +2,7 @@
  * Navigation between landing page, mode select, and game views
  */
 
-const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'leaderboard-view', 'torus-mode-select', 'torus-game-view', 'five-board-mode-select', 'five-board-game-view', 'federation-view'];
+const allViews = ['welcome-view', 'profile-setup-view', 'landing-page', 'mode-select', 'game-view', 'analyzer-view', 'online-setup', 'ranked-setup', 'leaderboard-view', 'torus-mode-select', 'torus-game-view', 'five-board-mode-select', 'five-board-game-view', 'federation-view'];
 
 function hideAll() {
   for (const id of allViews) {
@@ -26,6 +26,7 @@ export function showProfileSetup() { showView('profile-setup-view'); }
 export function showModeSelect() { showView('mode-select'); }
 export function showAnalyzer() { showView('analyzer-view'); }
 export function showOnlineSetup() { showView('online-setup'); }
+export function showRankedSetup() { showView('ranked-setup'); }
 export function showLeaderboard() { showView('leaderboard-view'); }
 export function showFederation() { showView('federation-view'); }
 
@@ -148,6 +149,26 @@ export function initNavigation() {
     });
   }
 
+  // Ranked mode card → ranked setup (requires auth)
+  const modeRanked = document.getElementById('mode-ranked');
+  if (modeRanked) {
+    modeRanked.addEventListener('click', () => {
+      window._pendingRankedGameType = 'raumschach';
+      import('./auth.js').then(({ isAuthenticated }) => {
+        const authReq = document.getElementById('ranked-auth-required');
+        const panels = document.getElementById('ranked-panels');
+        if (isAuthenticated()) {
+          if (authReq) authReq.classList.add('hidden');
+          if (panels) panels.style.display = '';
+        } else {
+          if (authReq) authReq.classList.remove('hidden');
+          if (panels) panels.style.display = 'none';
+        }
+        showRankedSetup();
+      });
+    });
+  }
+
   // Online setup back → mode select (or torus mode select)
   const onlineBack = document.getElementById('online-back');
   if (onlineBack) {
@@ -169,6 +190,35 @@ export function initNavigation() {
   const onlineLoginBtn = document.getElementById('online-login-btn');
   if (onlineLoginBtn) {
     onlineLoginBtn.addEventListener('click', () => {
+      import('./auth.js').then(({ openAuthModal }) => {
+        if (typeof openAuthModal === 'function') openAuthModal('login');
+      });
+    });
+  }
+
+  // Ranked setup back → appropriate mode select
+  const rankedBack = document.getElementById('ranked-back');
+  if (rankedBack) {
+    rankedBack.addEventListener('click', () => {
+      if (window.Multiplayer) window.Multiplayer.leaveQueue();
+      // Reset panels to config state
+      const config = document.getElementById('ranked-config-panel');
+      const waiting = document.getElementById('ranked-waiting-panel');
+      if (config) config.classList.remove('hidden');
+      if (waiting) waiting.classList.add('hidden');
+
+      const gt = window._pendingRankedGameType;
+      window._pendingRankedGameType = null;
+      if (gt === 'torus') showTorusModeSelect();
+      else if (gt === 'five-board') showFiveBoardModeSelect();
+      else showModeSelect();
+    });
+  }
+
+  // Ranked auth login button
+  const rankedLoginBtn = document.getElementById('ranked-login-btn');
+  if (rankedLoginBtn) {
+    rankedLoginBtn.addEventListener('click', () => {
       import('./auth.js').then(({ openAuthModal }) => {
         if (typeof openAuthModal === 'function') openAuthModal('login');
       });
@@ -291,6 +341,26 @@ export function initNavigation() {
     });
   }
 
+  // Torus ranked mode card → ranked setup (requires auth)
+  const torusModeRanked = document.getElementById('torus-mode-ranked');
+  if (torusModeRanked) {
+    torusModeRanked.addEventListener('click', () => {
+      window._pendingRankedGameType = 'torus';
+      import('./auth.js').then(({ isAuthenticated }) => {
+        const authReq = document.getElementById('ranked-auth-required');
+        const panels = document.getElementById('ranked-panels');
+        if (isAuthenticated()) {
+          if (authReq) authReq.classList.add('hidden');
+          if (panels) panels.style.display = '';
+        } else {
+          if (authReq) authReq.classList.remove('hidden');
+          if (panels) panels.style.display = 'none';
+        }
+        showRankedSetup();
+      });
+    });
+  }
+
   // Torus game view back → torus mode select
   const torusBackToMenu = document.getElementById('torus-back-to-menu');
   if (torusBackToMenu) {
@@ -332,6 +402,26 @@ export function initNavigation() {
           if (panels) panels.style.display = 'none';
         }
         showOnlineSetup();
+      });
+    });
+  }
+
+  // Five-Board ranked mode card → ranked setup (requires auth)
+  const fbModeRanked = document.getElementById('fb-mode-ranked');
+  if (fbModeRanked) {
+    fbModeRanked.addEventListener('click', () => {
+      window._pendingRankedGameType = 'five-board';
+      import('./auth.js').then(({ isAuthenticated }) => {
+        const authReq = document.getElementById('ranked-auth-required');
+        const panels = document.getElementById('ranked-panels');
+        if (isAuthenticated()) {
+          if (authReq) authReq.classList.add('hidden');
+          if (panels) panels.style.display = '';
+        } else {
+          if (authReq) authReq.classList.remove('hidden');
+          if (panels) panels.style.display = 'none';
+        }
+        showRankedSetup();
       });
     });
   }

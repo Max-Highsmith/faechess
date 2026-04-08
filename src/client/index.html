@@ -186,6 +186,12 @@
           <p>Play a Friend</p>
           <p class="game-desc">Create a game and share the invite link</p>
         </button>
+        <button class="game-card" id="mode-ranked">
+          <div class="game-icon">&#9876;</div>
+          <h2>Ranked</h2>
+          <p>Random Matchmaking</p>
+          <p class="game-desc">Get paired with a random opponent</p>
+        </button>
         <button class="game-card" id="mode-leaderboard">
           <div class="game-icon">&#127942;</div>
           <h2>Leaderboard</h2>
@@ -248,6 +254,47 @@
             <input id="invite-code-input" placeholder="Paste invite code or link" />
             <button id="btn-join-game">Join</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ranked Matchmaking Setup -->
+  <div id="ranked-setup" class="hidden">
+    <div class="landing-container">
+      <button id="ranked-back" class="back-btn">&larr; Back to Menu</button>
+      <h1 class="landing-title">Ranked Match</h1>
+      <p class="landing-subtitle">Find a random opponent</p>
+
+      <div id="ranked-auth-required" class="hidden" style="text-align:center; margin:2rem 0;">
+        <p style="color:#ff6b6b;">You need to be logged in to play ranked.</p>
+        <button id="ranked-login-btn" class="user-btn" style="margin-top:0.5rem;">Login / Sign Up</button>
+      </div>
+
+      <div id="ranked-panels">
+        <!-- Time Control Selection -->
+        <div id="ranked-config-panel" class="online-panel">
+          <h2>Select Time Control</h2>
+          <div class="time-control-picker">
+            <div class="time-control-options">
+              <button class="ranked-time-btn time-btn" data-minutes="3">3 min</button>
+              <button class="ranked-time-btn time-btn selected" data-minutes="5">5 min</button>
+              <button class="ranked-time-btn time-btn" data-minutes="10">10 min</button>
+              <button class="ranked-time-btn time-btn" data-minutes="15">15 min</button>
+              <button class="ranked-time-btn time-btn" data-minutes="0">No Clock</button>
+            </div>
+          </div>
+          <button id="btn-find-match" class="primary-btn" style="margin-top:1.5rem;">Find Match</button>
+        </div>
+
+        <!-- Searching/Waiting Panel -->
+        <div id="ranked-waiting-panel" class="online-panel hidden">
+          <h2>Searching for Opponent...</h2>
+          <div class="ranked-spinner"></div>
+          <p id="ranked-queue-time" style="color:#7fdbca; margin:1rem 0;">Waiting: 0:00</p>
+          <button id="btn-cancel-queue" class="primary-btn" style="background:#5e1a1a; border-color:#ff6b6b; color:#ff6b6b;">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -524,6 +571,12 @@
           <p>Play a Friend</p>
           <p class="game-desc">Create a game and share the invite link</p>
         </button>
+        <button class="game-card" id="torus-mode-ranked">
+          <div class="game-icon">&#9876;</div>
+          <h2>Ranked</h2>
+          <p>Random Matchmaking</p>
+          <p class="game-desc">Get paired with a random opponent</p>
+        </button>
       </div>
     </div>
   </div>
@@ -643,6 +696,12 @@
           <h2>Online</h2>
           <p>Play a Friend</p>
           <p class="game-desc">Create a game and share the invite link</p>
+        </button>
+        <button class="game-card" id="fb-mode-ranked">
+          <div class="game-icon">&#9876;</div>
+          <h2>Ranked</h2>
+          <p>Random Matchmaking</p>
+          <p class="game-desc">Get paired with a random opponent</p>
         </button>
       </div>
     </div>

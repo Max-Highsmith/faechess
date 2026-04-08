@@ -16,7 +16,7 @@ import * as FiveBoardGameModule from './five-board-game.js';
 import * as FiveBoardAIModule from './five-board-ai.js';
 import * as ChessClockModule from './chess-clock.js';
 import { initAuth, getCurrentUser, getAuthToken, isAuthenticated } from './auth.js';
-import { initNavigation, startOnlineGame, showOnlineSetup, startTorusOnlineGame, startFiveBoardGame } from './navigation.js';
+import { initNavigation, startOnlineGame, showOnlineSetup, showRankedSetup, startTorusOnlineGame, startFiveBoardGame } from './navigation.js';
 import { initProfileSetup } from './profile.js';
 
 // Make THREE and OrbitControls available globally for render.js
@@ -50,6 +50,9 @@ initMusicPlayer();
 
 // Set up online game UI handlers
 setupOnlineHandlers();
+
+// Set up ranked matchmaking UI handlers
+setupRankedHandlers();
 
 // Load render.js and main.js dynamically
 Promise.all([
@@ -218,6 +221,91 @@ function setupOnlineHandlers() {
         btnJoin.textContent = 'Join';
       }
     });
+  }
+}
+
+/**
+ * Set up ranked matchmaking UI handlers
+ */
+function setupRankedHandlers() {
+  // Time control selection (scoped to ranked buttons only)
+  const rankedTimeBtns = document.querySelectorAll('.ranked-time-btn');
+  let rankedTimeControl = 5;
+  rankedTimeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      rankedTimeBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      rankedTimeControl = parseInt(btn.dataset.minutes, 10);
+    });
+  });
+
+  // Find Match button
+  const btnFind = document.getElementById('btn-find-match');
+  if (btnFind) {
+    btnFind.addEventListener('click', async () => {
+      try {
+        btnFind.disabled = true;
+        btnFind.textContent = 'Searching...';
+
+        const gameType = window._pendingRankedGameType || 'raumschach';
+
+        // Set match callback BEFORE joining queue (for the waiting player)
+        MultiplayerModule.setMatchCallback((payload) => {
+          stopQueueTimer();
+          routeOnlineGame();
+        });
+
+        const result = await MultiplayerModule.joinQueue(gameType, rankedTimeControl);
+
+        if (result.status === 'matched') {
+          // Instant match — go straight to game
+          routeOnlineGame();
+        } else {
+          // Queued — show waiting panel
+          document.getElementById('ranked-config-panel').classList.add('hidden');
+          document.getElementById('ranked-waiting-panel').classList.remove('hidden');
+          startQueueTimer();
+        }
+      } catch (err) {
+        alert('Failed to find match: ' + err.message);
+      } finally {
+        btnFind.disabled = false;
+        btnFind.textContent = 'Find Match';
+      }
+    });
+  }
+
+  // Cancel queue button
+  const btnCancel = document.getElementById('btn-cancel-queue');
+  if (btnCancel) {
+    btnCancel.addEventListener('click', async () => {
+      await MultiplayerModule.leaveQueue();
+      stopQueueTimer();
+      document.getElementById('ranked-waiting-panel').classList.add('hidden');
+      document.getElementById('ranked-config-panel').classList.remove('hidden');
+    });
+  }
+}
+
+// Queue elapsed timer
+let queueTimerInterval = null;
+let queueStartTime = null;
+
+function startQueueTimer() {
+  queueStartTime = Date.now();
+  const el = document.getElementById('ranked-queue-time');
+  queueTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - queueStartTime) / 1000);
+    const min = Math.floor(elapsed / 60);
+    const sec = String(elapsed % 60).padStart(2, '0');
+    if (el) el.textContent = `Waiting: ${min}:${sec}`;
+  }, 1000);
+}
+
+function stopQueueTimer() {
+  if (queueTimerInterval) {
+    clearInterval(queueTimerInterval);
+    queueTimerInterval = null;
   }
 }
 
