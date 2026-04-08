@@ -1339,10 +1339,11 @@ canvas { display: block; }
 /* Federation View */
 #federation-view {
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   overflow-y: auto;
   padding: 40px 20px 100px;
+  box-sizing: border-box;
 }
 
 .federation-container {
@@ -1372,10 +1373,10 @@ canvas { display: block; }
 /* Tab Navigation */
 .federation-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 32px;
   border-bottom: 2px solid #333;
-  overflow-x: auto;
 }
 
 .fed-tab {
